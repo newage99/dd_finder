@@ -63,8 +63,6 @@
             </Grid.ColumnDefinitions>
             <local:GridItem
                 Grid.Row="0" Grid.Column="0"
-                Id="{Binding gridItems[0, 0].Id}"
-                StateOrResult="{Binding gridItems[0, 0].StateOrResult}"
             ></local:GridItem>
         </Grid>
     </Grid>
