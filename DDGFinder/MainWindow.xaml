@@ -23,18 +23,26 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Label Grid.Column="0" VerticalAlignment="Center" Margin="6,0,4,0" >Nº nodes: </Label>
-            <TextBox Grid.Column="1" VerticalAlignment="Center" Height="22"></TextBox>
-            <Button Grid.Column="2" Height="22" Width="80" Margin="10,0,6,0" >Create panel</Button>
-            <Label Grid.Column="3" VerticalAlignment="Center">Nº iterations: </Label>
-            <Label Grid.Column="4" VerticalAlignment="Center">1</Label>
-            <TextBox Grid.Column="5" VerticalAlignment="Center" Height="22">1</TextBox>
-            <Button Grid.Column="6" Height="22" Width="80" Margin="10,0,10,0">Do iterations</Button>
+            <Label Grid.Column="0" VerticalAlignment="Center" Margin="6,0,4,0">Nº nodes: </Label>
+            <TextBox Grid.Column="1" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput">1</TextBox>
+            <Label Grid.Column="2" VerticalAlignment="Center" Margin="2,0,4,0">Min/Max length:</Label>
+            <TextBox Grid.Column="3" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput">8</TextBox>
+            <TextBox Grid.Column="4" VerticalAlignment="Center" Height="22" Margin="6,0,0,0" PreviewTextInput="TextBox_PreviewTextInput">20</TextBox>
+            <Button Grid.Column="5" Height="22" Width="30" Margin="6,0,6,0" Click="Init_Click" >Init</Button>
+            <Label Grid.Column="6" VerticalAlignment="Center">Nº iterations: </Label>
+            <Label Grid.Column="7" VerticalAlignment="Center">0</Label>
+            <TextBox Grid.Column="8" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput" IsEnabled="{Binding StateIsIdle}">1</TextBox>
+            <Button Grid.Column="9" Height="22" Width="80" Margin="10,0,6,0" IsEnabled="{Binding StateIsIdle}">Do iterations</Button>
+            <Button Grid.Column="10" Height="22" Width="34" Margin="0,0,10,0" IsEnabled="{Binding StopIteratingIsEnabled}">Stop</Button>
         </Grid>
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
@@ -61,9 +69,106 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <local:GridItem
-                Grid.Row="0" Grid.Column="0"
-            ></local:GridItem>
+            <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-0]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-0]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="1" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-1]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-1]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="2" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-2]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-2]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="3" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-3]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-3]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="4" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-4]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-4]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="5" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-5]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-5]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="6" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-6]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-6]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="7" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-7]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-7]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="8" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-8]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-8]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="9" BorderBrush="Black" BorderThickness="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="{Binding Ids[0-9]}" FontSize="9" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Row="1" Text="{Binding StateOrResults[0-9]}" FontSize="9" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>

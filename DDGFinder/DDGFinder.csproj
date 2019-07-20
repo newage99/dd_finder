@@ -67,10 +67,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="BindableTwoDArray.cs" />
     <Compile Include="GridItem.xaml.cs">
       <DependentUpon>GridItem.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GridItemClass.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

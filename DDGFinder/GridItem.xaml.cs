@@ -1,17 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace DDGFinder
 {
@@ -22,20 +10,17 @@ namespace DDGFinder
             InitializeComponent();
         }
 
-        private string idValue = "";
-
+        public static DependencyProperty IdProperty = DependencyProperty.Register("Id", typeof(string), typeof(GridItem));
+        public string Id
+        {
+            get { return (string)GetValue(IdProperty); }
+            set { SetValue(IdProperty, value); }
+        }
+        /*private string idValue = "";
         public string Id
         {
             get { return idValue; }
             set { idValue = value; }
-        }
-
-        private string stateOrResultValue = "";
-
-        public string StateOrResult
-        {
-            get { return stateOrResultValue; }
-            set { stateOrResultValue = value; }
-        }
+        }*/
     }
 }
