@@ -1,0 +1,2 @@
+DDGFinder/bin
+DDGFinder/obj
