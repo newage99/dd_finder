@@ -33,10 +33,13 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Label Grid.Column="0" VerticalAlignment="Center" Margin="6,0,4,0">Nº nodes: </Label>
-            <TextBox Grid.Column="1" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput">1</TextBox>
+            <TextBox Grid.Column="1" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput"
+                     Text="{Binding NumberOfNodes}" IsEnabled="{Binding StateNotLoadingOrDoingIterations}"></TextBox>
             <Label Grid.Column="2" VerticalAlignment="Center" Margin="2,0,4,0">Min/Max length:</Label>
-            <TextBox Grid.Column="3" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput">8</TextBox>
-            <TextBox Grid.Column="4" VerticalAlignment="Center" Height="22" Margin="6,0,0,0" PreviewTextInput="TextBox_PreviewTextInput">20</TextBox>
+            <TextBox Grid.Column="3" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput"
+                     IsEnabled="{Binding StateNotLoadingOrDoingIterations}" Text="{Binding MinLength}"></TextBox>
+            <TextBox Grid.Column="4" VerticalAlignment="Center" Height="22" Margin="6,0,0,0" PreviewTextInput="TextBox_PreviewTextInput"
+                     IsEnabled="{Binding StateNotLoadingOrDoingIterations}" Text="{Binding MaxLength}"></TextBox>
             <Button Grid.Column="5" Height="22" Width="30" Margin="6,0,6,0" Click="Init_Click" >Init</Button>
             <Label Grid.Column="6" VerticalAlignment="Center">Nº iterations: </Label>
             <Label Grid.Column="7" VerticalAlignment="Center">0</Label>
