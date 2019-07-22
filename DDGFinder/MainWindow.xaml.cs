@@ -153,183 +153,73 @@ namespace DDGFinder
             {
                 aaa = getValidRandomId();
             }
-            idsValues[0, 0] = getValidRandomId();
         }
 
-        /*private int validateId(string id)
+        private static char randomChar(Random r)
         {
-            int length = id.Length;
-            char start = id[0];
-            if (start == '+' || start == '*' || start == '/' || start == '%' || start == ')')
-                return length - 1;
-            char prev = ' ';
-            char actual = id[0];
-            char next;
-            for(int i = 1; i < length; i++)
-            {
-                if (i < id.Length)
-                    next = id[i];
-                else next = ' ';
-                if (forbidden_left_chars[actual].Contains(prev) || forbidden_right_chars[actual].Contains(next))
-                    return i;
-                prev = actual;
-                actual = next;
-            }
-            char last = id.Last();
-            if (last == '+' || last == '-' || last == '*' || last == '/' || last == '%' || last == '(')
-                return length - 1;
-            if (!id.Contains('x') || !id.Contains('y'))
-                return length - 1;
-            if ((id.Contains('y') && !id.Contains('x')) || (id.Contains('z') && (!id.Contains('x') || !id.Contains('y'))))
-                return length - 1;
-            bool contains_variables = false;
-            bool wrong_parenthesis = false;
-            int parenthesis_counter = 0;
-            bool parenthesis_with_one_space_only = false;
-            int vars_since_last_opening_parenthesis = 0;
-            last = ' ';
-            bool double_parenthesis_starts = false;
-            bool there_is_a_double_parenthesis = false;
-            for(int i = 0; i < length; i++)
-            {
-                char c = id[i];
-                if ("xyzn".Contains(c))
-                    contains_variables = true;
-                if (c == '(')
-                {
-                    parenthesis_counter += 1;
-                    vars_since_last_opening_parenthesis = 0;
-                    if (last == '(')
-                        double_parenthesis_starts = true;
-                }
-                else
-                {
-                    if (c == ')')
-                    {
-                        if (last == ')' && double_parenthesis_starts)
-                        {
-                            there_is_a_double_parenthesis = true;
-                            break;
-                        }
-                        parenthesis_counter -= 1;
-                        if (vars_since_last_opening_parenthesis < 2)
-                        {
-                            parenthesis_with_one_space_only = true;
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        if (last == ')')
-                        {
-                            double_parenthesis_starts = false;
-                            break;
-                        }
-                        vars_since_last_opening_parenthesis += 1;
-                    }
-                }
-                if (parenthesis_counter < 0)
-                {
-                    wrong_parenthesis = true;
-                    break;
-                }
-                last = c;
-            }
-            if (!contains_variables || wrong_parenthesis || parenthesis_counter != 0
-                || parenthesis_with_one_space_only || there_is_a_double_parenthesis)
-                return length - 1;
-            if (id.StartsWith("(") && id.EndsWith(")"))
-                return length - 1;
-            return 0;
+            return characters[r.Next(0, characters.Length - 1)];
         }
 
-        private bool nextId(ref string id, int pointer)
+        private bool validToPlaceCloseParenthesis(string result, int length)
         {
-            int length = id.Length;
-            int model_pos = -1;
-            if (pointer < length - 1)
-            {
-                if (pointer > 0)
-                {
-                    string aux = "";
-                    for (int i = pointer + 1; i < length; i++)
-                    {
-                        aux += characters[0];
-                    }
-                    id = id.Substring(0, pointer + 1) + aux;
-                }
-                else pointer = length - 1;
-            }
-            else pointer = length - 1;
-            while (pointer >= 0)
-            {
-                char char_to_look_at = id[pointer];
-                int characters_length = characters.Length;
-                for(int i = 0; i < characters_length; i++)
-                {
-                    if (characters[i] == char_to_look_at)
-                    {
-                        model_pos = i;
-                        break;
-                    }
-                }
-                if (model_pos < characters_length - 1)
-                {
-                    id = id.Substring(0, pointer) + characters[model_pos + 1];
-                    for (int j = id.Length; j < length; j++)
-                    {
-                        id += characters[0];
-                    }
-                    return true;
-                }
-                else pointer -= 1;
-            }
             return false;
-        }*/
-
-        private static char randomChar()
-        {
-            return characters[new Random().Next(0, characters.Length - 1)];
-        }
-
-        private string createRandomId()
-        {
-            string result = "";
-            int length = new Random().Next(minLengthValue, maxLengthValue);
-            char aux = randomChar();
-            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
-                aux = randomChar();
-            result += aux;
-            for (int i = 1; i < length; i++)
-            {
-                result += randomChar();
-            }
-            return result;
         }
 
         private string getValidRandomId()
         {
-            string result = createRandomId();
-            int length = result.Length;
-            for (int i = 0; i < length; i++)
+            Random r = new Random();
+            int length = r.Next(minLengthValue, maxLengthValue);
+            char aux = randomChar(r);
+            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
+                aux = randomChar(r);
+            string result = aux.ToString();
+            int parenCounter = aux != '(' ? 0 : 1;
+            int placeOfTheLastOpenParen = -10;
+            string charsRemoved = "";
+            for (int i = 1; i < length; i++)
             {
-                // TODO
+                if (parenCounter > 0 && i+1 > length-parenCounter)
+                {
+                    while (result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
+                    {
+                        charsRemoved += result[result.Length - 1];
+                        result = result.Substring(0, result.Length - 1);
+                    }
+                    while (parenCounter > 0)
+                    {
+                        result += ')';
+                        parenCounter -= 1;
+                    }
+                    break;
+                } else
+                {
+                    bool notDone = true;
+                    while (notDone)
+                    {
+                        aux = randomChar(r);
+                        if (!forbidden_left_chars[aux].Contains(result[i - 1])
+                            && (aux != ')' || (aux == ')' && (parenCounter > 0 && i-3 > placeOfTheLastOpenParen)))
+                            && (aux != '(' || (aux == '(' && i+4 < length)))
+                        {
+                            result += aux;
+                            if (aux == '(')
+                            {
+                                parenCounter += 1;
+                                placeOfTheLastOpenParen = i;
+                            }
+                            else if (aux == ')')
+                                parenCounter -= 1;
+                            notDone = false;
+                        }
+                    }
+                }
+            }
+            string almost_result = result;
+            while(result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
+            {
+                result = result.Substring(0, result.Length - 1);
             }
             return result;
         }
     }
 }
-
-/*int pointer = validateId(result);
-bool not_arrived_to_end = true;
-while (pointer != 0)
-{
-    if (!nextId(ref result, pointer))
-    {
-        not_arrived_to_end = false;
-        break;
-    }
-    pointer = validateId(result);
-}
-if (not_arrived_to_end)
-    random_string_not_done = false;*/
