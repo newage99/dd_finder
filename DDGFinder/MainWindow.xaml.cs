@@ -148,10 +148,15 @@ namespace DDGFinder
         private void Init_Click(object sender, RoutedEventArgs e)
         {
             topologies = new bool[10, 10, numberOfNodesValue, numberOfNodesValue];
-            idsValues[0, 0] = getRandomId();
+            string aaa = "";
+            while (true)
+            {
+                aaa = getValidRandomId();
+            }
+            idsValues[0, 0] = getValidRandomId();
         }
 
-        private int validateId(string id)
+        /*private int validateId(string id)
         {
             int length = id.Length;
             char start = id[0];
@@ -280,39 +285,51 @@ namespace DDGFinder
                 else pointer -= 1;
             }
             return false;
+        }*/
+
+        private static char randomChar()
+        {
+            return characters[new Random().Next(0, characters.Length - 1)];
         }
 
-        private string getRandomId()
+        private string createRandomId()
         {
             string result = "";
-            bool random_string_not_done = true;
-            while(random_string_not_done)
+            int length = new Random().Next(minLengthValue, maxLengthValue);
+            char aux = randomChar();
+            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
+                aux = randomChar();
+            result += aux;
+            for (int i = 1; i < length; i++)
             {
-                Random random = new Random();
-                int length = random.Next(minLengthValue, maxLengthValue);
-                char aux = characters[random.Next(0, characters.Length - 1)];
-                while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
-                    aux = characters[random.Next(0, characters.Length - 1)];
-                result += aux;
-                for (int i = 1; i < length; i++)
-                {
-                    result += characters[random.Next(0, characters.Length - 1)];
-                }
-                int pointer = validateId(result);
-                bool not_arrived_to_end = true;
-                while (pointer != 0)
-                {
-                    if (!nextId(ref result, pointer))
-                    {
-                        not_arrived_to_end = false;
-                        break;
-                    }
-                    pointer = validateId(result);
-                }
-                if (not_arrived_to_end)
-                    random_string_not_done = false;
+                result += randomChar();
+            }
+            return result;
+        }
+
+        private string getValidRandomId()
+        {
+            string result = createRandomId();
+            int length = result.Length;
+            for (int i = 0; i < length; i++)
+            {
+                // TODO
             }
             return result;
         }
     }
 }
+
+/*int pointer = validateId(result);
+bool not_arrived_to_end = true;
+while (pointer != 0)
+{
+    if (!nextId(ref result, pointer))
+    {
+        not_arrived_to_end = false;
+        break;
+    }
+    pointer = validateId(result);
+}
+if (not_arrived_to_end)
+    random_string_not_done = false;*/
