@@ -23,7 +23,7 @@ namespace DDGFinder
         private BindableTwoDArray<string> stateOrResultsValues =
             new BindableTwoDArray<string>(10, 10);
         private int numberOfNodesValue = 1;
-        private int minLengthValue = 8;
+        private int minLengthValue = 10;
         private int maxLengthValue = 20;
         private bool[,,,] topologies;
         private static string characters = "xyn+-*/%()12";
@@ -174,7 +174,7 @@ namespace DDGFinder
                 aux = randomChar(r);
             string result = aux.ToString();
             int parenCounter = aux != '(' ? 0 : 1;
-            int placeOfTheLastOpenParen = -10;
+            int placeOfTheLastOpenParen = aux != '(' ? -10 : 0;
             string charsRemoved = "";
             for (int i = 1; i < length; i++)
             {
@@ -199,7 +199,7 @@ namespace DDGFinder
                         aux = randomChar(r);
                         if (!forbidden_left_chars[aux].Contains(result[i - 1])
                             && (aux != ')' || (aux == ')' && (parenCounter > 0 && i-3 > placeOfTheLastOpenParen)))
-                            && (aux != '(' || (aux == '(' && i+4 < length)))
+                            && (aux != '(' || (aux == '(' && i+4+parenCounter < length)))
                         {
                             result += aux;
                             if (aux == '(')
@@ -214,11 +214,61 @@ namespace DDGFinder
                     }
                 }
             }
-            string almost_result = result;
             while(result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
             {
                 result = result.Substring(0, result.Length - 1);
             }
+            List<char> notContains = new List<char>();
+            if (!result.Contains("x")) notContains.Add('x');
+            if (!result.Contains("y")) notContains.Add('y');
+            if (!result.Contains("n")) notContains.Add('n');
+            if (notContains.Count > 0)
+            {
+                // We ensure 'x' and 'y' variables are in the id
+                int newLength = result.Length;
+                char[] order = new char[5] { 'x', 'y', 'n', '1', '2' };
+                Dictionary<char, int> orderCharToPos = new Dictionary<char, int>()
+                {
+                    { 'x', 0 },
+                    { 'y', 1 },
+                    { 'n', 2 },
+                    { '1', 3 },
+                    { '2', 4 }
+                };
+                List<int>[] positions = new List<int>[5];
+                for (int i = 0; i < 5; i++)
+                {
+                    positions[i] = new List<int>();
+                }
+                for (int i = 0; i < newLength; i++)
+                {
+                    for (int j = 0; j < 5; j++)
+                    {
+                        if (result[i] == order[j])
+                            positions[j].Add(i);
+                    }
+                }
+                for (int i = 0; i < notContains.Count; i++)
+                {
+                    char notContainChar = notContains[i];
+                    int pos = orderCharToPos[notContainChar];
+                    bool notAchieved = true;
+                    for (int j = 0; j < 5; j++)
+                    {
+                        if (j != pos && positions[j].Count > 1)
+                        {
+                            int actualPos = positions[j][0];
+                            positions[j].RemoveAt(0);
+                            result = result.Substring(0, actualPos) + notContainChar +
+                                result.Substring(actualPos + 1, result.Length - (actualPos + 1));
+                            notAchieved = false;
+                            break;
+                        }
+                    }
+                    if (notAchieved)
+                        result += "%" + notContainChar.ToString();
+                }
+            }            
             return result;
         }
     }
