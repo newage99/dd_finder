@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DDGFinder
 {
@@ -148,12 +149,26 @@ namespace DDGFinder
 
         private void Init_Click(object sender, RoutedEventArgs e)
         {
+            Init();
+        }
+
+        private async Task Init()
+        {
+            await Task.Run(() => InitTopologies());
+            //await InitTopologies();
+        }
+
+        private async Task InitTopologies()
+        {
             topologies = new Topology[10, 10];
             for (int i = 0; i < 10; i++)
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    topologies[i, j] = new Topology(numberOfNodesValue, getValidRandomId());
+                    stateOrResultsValues[i, j] = "Allocating...";
+                    idsValues[i, j] = getValidRandomId();
+                    topologies[i, j] = new Topology(numberOfNodesValue, idsValues[i, j]);
+                    stateOrResultsValues[i, j] = topologies[i, j].degree.ToString() + " " + topologies[i, j].diameter.ToString();
                 }
             }
         }
@@ -161,11 +176,6 @@ namespace DDGFinder
         private static char randomChar()
         {
             return characters[r.Next(0, characters.Length - 1)];
-        }
-
-        private bool validToPlaceCloseParenthesis(string result, int length)
-        {
-            return false;
         }
 
         private string getValidRandomId()
