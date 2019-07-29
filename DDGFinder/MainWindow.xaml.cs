@@ -17,6 +17,7 @@ namespace DDGFinder
             DOING_ITERATIONS = 3
         };
         private AppState appState = AppState.INITIAL;
+        private static readonly Random r = new Random();
         private bool requestedToStopIterating = false;
         private BindableTwoDArray<string> idsValues =
             new BindableTwoDArray<string>(10, 10);
@@ -25,7 +26,7 @@ namespace DDGFinder
         private int numberOfNodesValue = 1;
         private int minLengthValue = 10;
         private int maxLengthValue = 20;
-        private bool[,,,] topologies;
+        private Topology[,] topologies;
         private static string characters = "xyn+-*/%()12";
         private static char[] numbers_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
@@ -147,15 +148,17 @@ namespace DDGFinder
 
         private void Init_Click(object sender, RoutedEventArgs e)
         {
-            topologies = new bool[10, 10, numberOfNodesValue, numberOfNodesValue];
-            string aaa = "";
-            while (true)
+            topologies = new Topology[10, 10];
+            for (int i = 0; i < 10; i++)
             {
-                aaa = getValidRandomId();
+                for (int j = 0; j < 10; j++)
+                {
+                    topologies[i, j] = new Topology(numberOfNodesValue, getValidRandomId());
+                }
             }
         }
 
-        private static char randomChar(Random r)
+        private static char randomChar()
         {
             return characters[r.Next(0, characters.Length - 1)];
         }
@@ -169,9 +172,9 @@ namespace DDGFinder
         {
             Random r = new Random();
             int length = r.Next(minLengthValue, maxLengthValue);
-            char aux = randomChar(r);
+            char aux = randomChar();
             while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
-                aux = randomChar(r);
+                aux = randomChar();
             string result = aux.ToString();
             int parenCounter = aux != '(' ? 0 : 1;
             int placeOfTheLastOpenParen = aux != '(' ? -10 : 0;
@@ -196,7 +199,7 @@ namespace DDGFinder
                     bool notDone = true;
                     while (notDone)
                     {
-                        aux = randomChar(r);
+                        aux = randomChar();
                         if (!forbidden_left_chars[aux].Contains(result[i - 1])
                             && (aux != ')' || (aux == ')' && (parenCounter > 0 && i-3 > placeOfTheLastOpenParen)))
                             && (aux != '(' || (aux == '(' && i+4+parenCounter < length)))
