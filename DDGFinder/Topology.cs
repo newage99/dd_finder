@@ -1,23 +1,27 @@
 ﻿using System;
 using Flee.PublicTypes;
+using System.Collections.Generic;
 
 namespace DDGFinder
 {
     class Topology
     {
         private int size;
-        private string id;
         private bool[,] matrix = null;
+        public string id;
         public int degree = 0;
         public int diameter = 0;
 
-        public Topology(int size, string id)
+        public Topology(int size)
         {
             this.size = size;
-            this.id = id.Replace("1", "1M").Replace("2", "2M");
             matrix = new bool[size, size];
+        }
+
+        public void init(string id)
+        {
+            this.id = id.Replace("1", "1M").Replace("2", "2M");
             populate();
-            calculateDD();
         }
 
         private void populate()
@@ -51,9 +55,54 @@ namespace DDGFinder
             }
         }
 
-        private void calculateDD()
+        public bool isDisconnected()
         {
-            
+            List<int> visited = new List<int>();
+            visited.Add(0);
+            int pos = 0;
+            int toVisit;
+            while(pos < visited.Count && visited.Count < size)
+            {
+                toVisit = visited[pos];
+                for (int i = 0; i < size; i++)
+                {
+                    if (i != toVisit && matrix[toVisit, i])
+                    {
+                        bool notVisited = true;
+                        for(int j = 0; j < visited.Count; j++)
+                        {
+                            if(visited[j] == i)
+                            {
+                                notVisited = false;
+                                break;
+                            }
+                        }
+                        if (notVisited)
+                            visited.Add(i);
+                    }
+                }
+                pos += 1;
+            }
+            return visited.Count != size;
+        }
+
+        public void calculateDD()
+        {
+            // TODO: Calculate diameter
+            int actualDegree;
+            for (int i = 0; i < size; i++)
+            {
+                actualDegree = 0;
+                for(int j = 0; j < size; j++)
+                {
+                    if (matrix[i, j])
+                    {
+                        actualDegree += 1;
+                    }
+                }
+                if (actualDegree > degree)
+                    degree = actualDegree;
+            }
         }
     }
 }

@@ -155,7 +155,6 @@ namespace DDGFinder
         private async Task Init()
         {
             await Task.Run(() => InitTopologies());
-            //await InitTopologies();
         }
 
         private async Task InitTopologies()
@@ -165,9 +164,16 @@ namespace DDGFinder
             {
                 for (int j = 0; j < 10; j++)
                 {
-                    stateOrResultsValues[i, j] = "Allocating...";
-                    idsValues[i, j] = getValidRandomId();
-                    topologies[i, j] = new Topology(numberOfNodesValue, idsValues[i, j]);
+                    stateOrResultsValues[i, j] = "Calculating...";
+                    topologies[i, j] = new Topology(numberOfNodesValue);
+                    bool disconnected = true;
+                    while(disconnected)
+                    {
+                        topologies[i, j].init(getValidRandomId());
+                        disconnected = topologies[i, j].isDisconnected();
+                    }
+                    idsValues[i, j] = topologies[i, j].id;
+                    topologies[i, j].calculateDD();
                     stateOrResultsValues[i, j] = topologies[i, j].degree.ToString() + " " + topologies[i, j].diameter.ToString();
                 }
             }
