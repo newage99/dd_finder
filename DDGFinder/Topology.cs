@@ -9,8 +9,10 @@ namespace DDGFinder
         private int size;
         private bool[,] matrix = null;
         public string id;
+        private string idToCompile;
         public int degree = 0;
         public int diameter = 0;
+        public int disconnected_counter = 0;
 
         public Topology(int size)
         {
@@ -18,9 +20,15 @@ namespace DDGFinder
             matrix = new bool[size, size];
         }
 
-        public void init(string id)
+        public void init()
         {
-            this.id = id.Replace("1", "1M").Replace("2", "2M");
+            disconnected_counter = 0;
+        }
+
+        public void setIdAndPopulate(string id)
+        {
+            this.id = id;
+            idToCompile = id.Replace("1", "1M").Replace("2", "2M");
             populate();
         }
 
@@ -39,7 +47,7 @@ namespace DDGFinder
                     context.Variables["y"] = (decimal)y;
                     try
                     {
-                        IGenericExpression<decimal> eGeneric = context.CompileGeneric<decimal>("Round(" + id + ")");
+                        IGenericExpression<decimal> eGeneric = context.CompileGeneric<decimal>("Round(" + idToCompile + ")");
                         decimal resultDecimal = eGeneric.Evaluate();
                         int result = (int)resultDecimal;
                         if (result >= 0 && result < size && result != x && !matrix[x, result])
@@ -83,26 +91,67 @@ namespace DDGFinder
                 }
                 pos += 1;
             }
+            disconnected_counter += 1;
             return visited.Count != size;
         }
 
         public void calculateDD()
         {
-            // TODO: Calculate diameter
             int actualDegree;
             for (int i = 0; i < size; i++)
             {
                 actualDegree = 0;
-                for(int j = 0; j < size; j++)
+                for (int j = 0; j < size; j++)
                 {
                     if (matrix[i, j])
-                    {
                         actualDegree += 1;
-                    }
                 }
                 if (actualDegree > degree)
                     degree = actualDegree;
             }
+            for (int i = 0; i < size - 1; i++)
+            {
+                for (int j = i+1; j < size; j++)
+                {
+                    List<int> toVisitNodes = new List<int>();
+                    toVisitNodes.Add(i);
+                    int toVisitPos = 0;
+                    int actualDiameter = 0;
+                    bool notFounded = true;
+                    while (toVisitNodes.Count < size && notFounded)
+                    {
+                        int toVisitNodesCount = toVisitNodes.Count;
+                        for (int x = toVisitPos; x < toVisitNodesCount && toVisitNodes.Count < size && notFounded; x++)
+                        {
+                            int toVisit = toVisitNodes[toVisitPos];
+                            for (int y = 0; y < size && notFounded; y++)
+                            {
+                                if (matrix[toVisit, y])
+                                {
+                                    if (y == j)
+                                        notFounded = false;
+                                    if (listNotContainsValue(toVisitNodes, y))
+                                        toVisitNodes.Add(y);
+                                }
+                            }
+                            toVisitPos += 1;
+                        }
+                        actualDiameter += 1;
+                    }
+                    if (actualDiameter > diameter)
+                        diameter = actualDiameter;
+                }
+            }
+        }
+
+        private bool listNotContainsValue(List<int> list, int value)
+        {
+            for(int i = 0; i < list.Count; i++)
+            {
+                if (list[i] == value)
+                    return false;
+            }
+            return true;
         }
     }
 }

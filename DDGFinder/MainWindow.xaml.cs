@@ -149,34 +149,42 @@ namespace DDGFinder
 
         private void Init_Click(object sender, RoutedEventArgs e)
         {
-            Init();
-        }
-
-        private async Task Init()
-        {
-            await Task.Run(() => InitTopologies());
-        }
-
-        private async Task InitTopologies()
-        {
             topologies = new Topology[10, 10];
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 4; i++)
             {
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < 4; j++)
                 {
-                    stateOrResultsValues[i, j] = "Calculating...";
-                    topologies[i, j] = new Topology(numberOfNodesValue);
-                    bool disconnected = true;
-                    while(disconnected)
-                    {
-                        topologies[i, j].init(getValidRandomId());
-                        disconnected = topologies[i, j].isDisconnected();
-                    }
-                    idsValues[i, j] = topologies[i, j].id;
-                    topologies[i, j].calculateDD();
-                    stateOrResultsValues[i, j] = topologies[i, j].degree.ToString() + " " + topologies[i, j].diameter.ToString();
+                    InitTopology(i, j);
                 }
             }
+        }
+
+        private async Task InitTopology(int i, int j)
+        {
+            idsValues[i, j] = "";
+            stateOrResultsValues[i, j] = "Generating...";
+            await Task.Run(() => GeneratingAsync(i, j));
+            stateOrResultsValues[i, j] = "Calculating...";
+            await Task.Run(() => CalculateAsync(i, j));
+        }
+
+        private void GeneratingAsync(int i, int j)
+        {
+            topologies[i, j] = new Topology(numberOfNodesValue);
+            topologies[i, j].init();
+            bool disconnected = true;
+            while (disconnected)
+            {
+                topologies[i, j].setIdAndPopulate(getValidRandomId());
+                disconnected = topologies[i, j].isDisconnected();
+            }
+            idsValues[i, j] = topologies[i, j].id;
+        }
+
+        private void CalculateAsync(int i, int j)
+        {
+            topologies[i, j].calculateDD();
+            stateOrResultsValues[i, j] = topologies[i, j].disconnected_counter.ToString() + ": " + topologies[i, j].degree.ToString() + " " + topologies[i, j].diameter.ToString();
         }
 
         private static char randomChar()
