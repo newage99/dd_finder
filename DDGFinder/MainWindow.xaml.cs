@@ -203,6 +203,7 @@ namespace DDGFinder
             int parenCounter = aux != '(' ? 0 : 1;
             int placeOfTheLastOpenParen = aux != '(' ? -10 : 0;
             string charsRemoved = "";
+            long d0 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             for (int i = 1; i < length; i++)
             {
                 if (parenCounter > 0 && i+1 > length-parenCounter)
@@ -241,7 +242,9 @@ namespace DDGFinder
                     }
                 }
             }
-            while(result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
+            long d1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine("0: " + (d1 - d0).ToString());
+            while (result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
             {
                 result = result.Substring(0, result.Length - 1);
             }
@@ -295,7 +298,9 @@ namespace DDGFinder
                     if (notAchieved)
                         result += "%" + notContainChar.ToString();
                 }
-            }            
+            }
+            long d2 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine("1: " + (d2 - d1).ToString());
             return result;
         }
     }

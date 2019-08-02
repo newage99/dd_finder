@@ -32,18 +32,29 @@ namespace DDGFinder
             populate();
         }
 
+        private List<Operation> createOperationsList()
+        {
+            List<Operation> operations = new List<Operation>();
+            for(int i = 0; i < id.Length; i++)
+            {
+
+            }
+            return operations;
+        }
+
         private void populate()
         {
             if (matrix == null)
                 return;
-            ExpressionContext context = new ExpressionContext();
+            /*ExpressionContext context = new ExpressionContext();
             context.Imports.AddType(typeof(Math));
             context.Variables["n"] = (decimal)size;
-            for(int x = 0; x < size; x++)
+            long d0 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;*/
+            for (int x = 0; x < size; x++)
             {
                 for(int y = 0; y < size; y++)
                 {
-                    context.Variables["x"] = (decimal)x;
+                    /*context.Variables["x"] = (decimal)x;
                     context.Variables["y"] = (decimal)y;
                     try
                     {
@@ -57,10 +68,12 @@ namespace DDGFinder
                         }
                     } catch (Exception e)
                     {
-                        Console.WriteLine("populate (id=" + id + ", x=" + x.ToString() + ", y=" + y.ToString() + "): " + e.ToString());
-                    }
+                        int a = 0;
+                    }*/
                 }
             }
+            /*long d1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            Console.WriteLine("2: " + (d1 - d0).ToString());*/
         }
 
         public bool isDisconnected()
