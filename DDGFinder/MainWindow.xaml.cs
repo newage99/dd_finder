@@ -33,7 +33,7 @@ namespace DDGFinder
         private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
         private static char[] plus_minus_array = new char[] { '+', '-', '*', '/', '%', ')' };
         private static char[] operators_array = new char[] { '+', '*', '/', '%', ')' };
-        private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
+        /*private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
         {
             { 'x', xyn_array },
             { 'y', xyn_array },
@@ -55,7 +55,7 @@ namespace DDGFinder
             { '7', numbers_array },
             { '8', numbers_array },
             { '9', numbers_array }
-        };
+        };*/
         private static char[] array_left = new char[] { 'x', 'y', 'n', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         private static char[] operators_and_close_parenthesis_array_left = new char[] { '+', '-', '*', '/', '%', '(' };
         private static Dictionary<char, char[]> forbidden_left_chars = new Dictionary<char, char[]>()
@@ -64,7 +64,7 @@ namespace DDGFinder
             { 'y', array_left },
             { 'n', array_left },
             { '+', operators_and_close_parenthesis_array_left },
-            { '-', new char[] { '+', '-' } },
+            { '-', new char[] { '+', '-', '/', '%' } },
             { '*', operators_and_close_parenthesis_array_left },
             { '/', operators_and_close_parenthesis_array_left },
             { '%', operators_and_close_parenthesis_array_left },
@@ -149,10 +149,11 @@ namespace DDGFinder
 
         private void Init_Click(object sender, RoutedEventArgs e)
         {
+
             topologies = new Topology[10, 10];
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 10; i++)
             {
-                for (int j = 0; j < 4; j++)
+                for (int j = 0; j < 10; j++)
                 {
                     InitTopology(i, j);
                 }
@@ -164,8 +165,9 @@ namespace DDGFinder
             idsValues[i, j] = "";
             stateOrResultsValues[i, j] = "Generating...";
             await Task.Run(() => GeneratingAsync(i, j));
-            stateOrResultsValues[i, j] = "Calculating...";
-            await Task.Run(() => CalculateAsync(i, j));
+            /*stateOrResultsValues[i, j] = "Calculating...";
+            await Task.Run(() => CalculateAsync(i, j));*/
+
         }
 
         private void GeneratingAsync(int i, int j)
@@ -179,6 +181,7 @@ namespace DDGFinder
                 disconnected = topologies[i, j].isDisconnected();
             }
             idsValues[i, j] = topologies[i, j].id;
+            stateOrResultsValues[i, j] = "Waiting to start";
         }
 
         private void CalculateAsync(int i, int j)

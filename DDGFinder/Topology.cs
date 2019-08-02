@@ -32,48 +32,41 @@ namespace DDGFinder
             populate();
         }
 
-        private List<Operation> createOperationsList()
-        {
-            List<Operation> operations = new List<Operation>();
-            for(int i = 0; i < id.Length; i++)
-            {
-
-            }
-            return operations;
-        }
-
         private void populate()
         {
             if (matrix == null)
                 return;
-            /*ExpressionContext context = new ExpressionContext();
-            context.Imports.AddType(typeof(Math));
-            context.Variables["n"] = (decimal)size;
-            long d0 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;*/
+            ExpressionInterpreter.Result result;
             for (int x = 0; x < size; x++)
             {
                 for(int y = 0; y < size; y++)
                 {
-                    /*context.Variables["x"] = (decimal)x;
-                    context.Variables["y"] = (decimal)y;
                     try
                     {
-                        IGenericExpression<decimal> eGeneric = context.CompileGeneric<decimal>("Round(" + idToCompile + ")");
-                        decimal resultDecimal = eGeneric.Evaluate();
-                        int result = (int)resultDecimal;
-                        if (result >= 0 && result < size && result != x && !matrix[x, result])
+                        result = ExpressionInterpreter.Result.OK;
+                        string input = id.Replace("x", x.ToString()).Replace("y", y.ToString())
+                            .Replace("n", size.ToString()).Replace("*-", "*0-").Replace("(-", "(0-");
+                        if (input.StartsWith("-"))
+                            input = "0" + input;
+                        int connectTo = new ExpressionInterpreter().Compute(input, out result);
+                        if (result == ExpressionInterpreter.Result.OK)
                         {
-                            matrix[x, result] = true;
-                            matrix[result, x] = true;
+                            if (connectTo >= 0 && connectTo < size && connectTo != x && !matrix[x, connectTo])
+                            {
+                                matrix[x, connectTo] = true;
+                                matrix[connectTo, x] = true;
+                            }
+                        }
+                        else
+                        {
+                            int a = 0;
                         }
                     } catch (Exception e)
                     {
-                        int a = 0;
-                    }*/
+                        Console.WriteLine(id + ": " + e.ToString());
+                    }
                 }
             }
-            /*long d1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            Console.WriteLine("2: " + (d1 - d0).ToString());*/
         }
 
         public bool isDisconnected()
