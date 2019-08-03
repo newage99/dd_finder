@@ -8,11 +8,28 @@ namespace DDGFinder
     {
         private int size;
         private bool[,] matrix = null;
-        public string id;
+        private string id;
         private string idToCompile;
         public int degree = 0;
         public int diameter = 0;
         public int disconnected_counter = 0;
+        public bool correctly_populated = false;
+
+        public string Id
+        {
+            get { return id; }
+            set { id = value; }
+        }
+
+        public int Puntuation
+        {
+            get { return degree + diameter; }
+        }
+
+        public string DisconnectedCounterDegreeAndDiameter
+        {
+            get { return disconnected_counter.ToString() + ": " + degree.ToString() + "  " + diameter.ToString(); }
+        }
 
         public Topology(int size)
         {
@@ -23,6 +40,7 @@ namespace DDGFinder
         public void init()
         {
             disconnected_counter = 0;
+            correctly_populated = false;
         }
 
         public void setIdAndPopulate(string id)
@@ -98,7 +116,8 @@ namespace DDGFinder
                 pos += 1;
             }
             disconnected_counter += 1;
-            return visited.Count != size;
+            correctly_populated = visited.Count == size;
+            return !correctly_populated;
         }
 
         public void calculateDD()

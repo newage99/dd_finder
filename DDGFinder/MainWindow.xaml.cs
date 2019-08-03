@@ -5,11 +5,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace DDGFinder
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChangedEventHandler handler = PropertyChanged;
+            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+        protected bool SetField<T>(ref T field, T value, string propertyName)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
         enum AppState
         {
             INITIAL = 0,
@@ -27,13 +42,12 @@ namespace DDGFinder
         private int numberOfNodesValue = 1;
         private int minLengthValue = 10;
         private int maxLengthValue = 20;
-        private Topology[,] topologies;
         private static string characters = "xyn+-*/%()12";
-        private static char[] numbers_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        /*private static char[] numbers_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
         private static char[] plus_minus_array = new char[] { '+', '-', '*', '/', '%', ')' };
         private static char[] operators_array = new char[] { '+', '*', '/', '%', ')' };
-        /*private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
+        private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
         {
             { 'x', xyn_array },
             { 'y', xyn_array },
@@ -81,6 +95,12 @@ namespace DDGFinder
             { '8', array_left },
             { '9', array_left }
         };
+
+        private ObservableCollection<Topology> topologies = new ObservableCollection<Topology>(new List<Topology>(100));
+        ObservableCollection<Topology> Topologies
+        {
+            get { return topologies; }
+        }
 
         public BindableTwoDArray<string> Ids
         {
@@ -134,6 +154,10 @@ namespace DDGFinder
         {
             InitializeComponent();
             DataContext = this;
+            for (int i = 0; i < 100; i++)
+            {
+                topologies.Add(null);
+            }
         }
 
         private static readonly Regex _regex = new Regex("[^0-9.-]+");
@@ -149,45 +173,95 @@ namespace DDGFinder
 
         private void Init_Click(object sender, RoutedEventArgs e)
         {
+            SetField(ref appState, AppState.INITIAL, "StateIsIdle");
+            OnPropertyChanged("StopIteratingIsEnabled");
+            Task.Run(() => Init());
+        }
 
-            topologies = new Topology[10, 10];
-            for (int i = 0; i < 10; i++)
+        private async void Init()
+        {
+            List<Task> tasks = new List<Task>();
+            for (int i = 0; i < 100; i++)
             {
-                for (int j = 0; j < 10; j++)
+                tasks.Add(InitTopology(i));
+            }
+            Task.WaitAll(tasks.ToArray());
+            SetField(ref appState, AppState.IDLE, "StateIsIdle");
+        }
+
+        private void DoIterations_Click(object sender, RoutedEventArgs e)
+        {
+            SetField(ref appState, AppState.DOING_ITERATIONS, "StateIsIdle");
+            OnPropertyChanged("StopIteratingIsEnabled");
+            Task.Run(() => Iterate());
+        }
+
+        private async Task Iterate()
+        {
+            List<Task> tasks = new List<Task>();
+            for (int i = 0; i < 100; i++)
+            {
+                tasks.Add(CalculateDD(i));
+            }
+            Task.WaitAll(tasks.ToArray());
+            ObservableCollection<Topology> newTopologies = new ObservableCollection<Topology>();
+            for (int i = 0; i < 100; i++)
+            {
+                bool notInserted = true;
+                for (int j = 0; j < newTopologies.Count; j++)
                 {
-                    InitTopology(i, j);
+                    if (topologies[i].Puntuation < newTopologies[j].Puntuation)
+                    {
+                        newTopologies.Insert(j, topologies[i]);
+                        notInserted = false;
+                        break;
+                    }
                 }
+                if (notInserted)
+                    newTopologies.Add(topologies[i]);
+            }
+            topologies = newTopologies;
+            for (int i = 0; i < 100; i++)
+            {
+                idsValues[i / 10, i % 10] = topologies[i].Id;
+                stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
             }
         }
 
-        private async Task InitTopology(int i, int j)
+        private async Task CalculateDD(int i)
         {
-            idsValues[i, j] = "";
-            stateOrResultsValues[i, j] = "Generating...";
-            await Task.Run(() => GeneratingAsync(i, j));
-            /*stateOrResultsValues[i, j] = "Calculating...";
-            await Task.Run(() => CalculateAsync(i, j));*/
-
+            await Task.Run(() => CalculateDDAsync(i));
         }
 
-        private void GeneratingAsync(int i, int j)
+        private void CalculateDDAsync(int i)
         {
-            topologies[i, j] = new Topology(numberOfNodesValue);
-            topologies[i, j].init();
+            topologies[i].calculateDD();
+            stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
+        }
+
+        private async Task InitTopology(int i)
+        {
+            int div = i / 10;
+            int mod = i % 10;
+            idsValues[div, mod] = "";
+            stateOrResultsValues[div, mod] = "Generating...";
+            await Task.Run(() => GeneratingAsync(i));
+        }
+
+        private void GeneratingAsync(int i)
+        {
+            topologies[i] = new Topology(numberOfNodesValue);
+            topologies[i].init();
             bool disconnected = true;
             while (disconnected)
             {
-                topologies[i, j].setIdAndPopulate(getValidRandomId());
-                disconnected = topologies[i, j].isDisconnected();
+                topologies[i].setIdAndPopulate(getValidRandomId());
+                disconnected = topologies[i].isDisconnected();
             }
-            idsValues[i, j] = topologies[i, j].id;
-            stateOrResultsValues[i, j] = "Waiting to start";
-        }
-
-        private void CalculateAsync(int i, int j)
-        {
-            topologies[i, j].calculateDD();
-            stateOrResultsValues[i, j] = topologies[i, j].disconnected_counter.ToString() + ": " + topologies[i, j].degree.ToString() + " " + topologies[i, j].diameter.ToString();
+            int div = i / 10;
+            int mod = i % 10;
+            idsValues[div, mod] = topologies[i].Id;
+            stateOrResultsValues[div, mod] = "Waiting to start";
         }
 
         private static char randomChar()
