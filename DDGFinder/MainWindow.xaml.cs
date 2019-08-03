@@ -15,8 +15,7 @@ namespace DDGFinder
         public event PropertyChangedEventHandler PropertyChanged;
         protected virtual void OnPropertyChanged(string propertyName)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         protected bool SetField<T>(ref T field, T value, string propertyName)
         {
@@ -186,7 +185,38 @@ namespace DDGFinder
                 tasks.Add(InitTopology(i));
             }
             Task.WaitAll(tasks.ToArray());
+            orderTopologiesByPuntuation();
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
+        }
+
+        private async Task InitTopology(int i)
+        {
+            int div = i / 10;
+            int mod = i % 10;
+            idsValues[div, mod] = "";
+            stateOrResultsValues[div, mod] = "Allocating and creating...";
+            await Task.Run(() => AllocateCreateAndComputeAsync(i));
+        }
+
+        private void AllocateCreateAndComputeAsync(int i)
+        {
+            topologies[i] = new Topology(numberOfNodesValue);
+            CreateRandomAsync(i);
+            CalculateDDAsync(i);
+        }
+
+        private void CreateRandomAsync(int i)
+        {
+            bool disconnected = true;
+            while (disconnected)
+            {
+                topologies[i].setIdAndPopulate(getValidRandomId());
+                disconnected = topologies[i].isDisconnected();
+            }
+            int div = i / 10;
+            int mod = i % 10;
+            idsValues[div, mod] = topologies[i].Id;
+            stateOrResultsValues[div, mod] = "Waiting to start";
         }
 
         private void DoIterations_Click(object sender, RoutedEventArgs e)
@@ -198,12 +228,17 @@ namespace DDGFinder
 
         private async Task Iterate()
         {
-            List<Task> tasks = new List<Task>();
-            for (int i = 0; i < 100; i++)
-            {
-                tasks.Add(CalculateDD(i));
-            }
-            Task.WaitAll(tasks.ToArray());
+            
+        }
+
+        private void CalculateDDAsync(int i)
+        {
+            topologies[i].calculateDD();
+            stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
+        }
+
+        private void orderTopologiesByPuntuation()
+        {
             ObservableCollection<Topology> newTopologies = new ObservableCollection<Topology>();
             for (int i = 0; i < 100; i++)
             {
@@ -226,42 +261,6 @@ namespace DDGFinder
                 idsValues[i / 10, i % 10] = topologies[i].Id;
                 stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
             }
-        }
-
-        private async Task CalculateDD(int i)
-        {
-            await Task.Run(() => CalculateDDAsync(i));
-        }
-
-        private void CalculateDDAsync(int i)
-        {
-            topologies[i].calculateDD();
-            stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
-        }
-
-        private async Task InitTopology(int i)
-        {
-            int div = i / 10;
-            int mod = i % 10;
-            idsValues[div, mod] = "";
-            stateOrResultsValues[div, mod] = "Generating...";
-            await Task.Run(() => GeneratingAsync(i));
-        }
-
-        private void GeneratingAsync(int i)
-        {
-            topologies[i] = new Topology(numberOfNodesValue);
-            topologies[i].init();
-            bool disconnected = true;
-            while (disconnected)
-            {
-                topologies[i].setIdAndPopulate(getValidRandomId());
-                disconnected = topologies[i].isDisconnected();
-            }
-            int div = i / 10;
-            int mod = i % 10;
-            idsValues[div, mod] = topologies[i].Id;
-            stateOrResultsValues[div, mod] = "Waiting to start";
         }
 
         private static char randomChar()

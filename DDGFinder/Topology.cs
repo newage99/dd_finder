@@ -37,14 +37,10 @@ namespace DDGFinder
             matrix = new bool[size, size];
         }
 
-        public void init()
+        public void setIdAndPopulate(string id)
         {
             disconnected_counter = 0;
             correctly_populated = false;
-        }
-
-        public void setIdAndPopulate(string id)
-        {
             this.id = id;
             idToCompile = id.Replace("1", "1M").Replace("2", "2M");
             populate();
