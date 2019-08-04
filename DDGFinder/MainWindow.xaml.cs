@@ -42,8 +42,12 @@ namespace DDGFinder
         private int minLengthValue = 10;
         private int maxLengthValue = 20;
         private static string characters = "xyn+-*/%()12";
-        /*private static char[] numbers_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
+        private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '1', '2', '+', '-', '*', '/', '%' };
+        private static char[] numbers_array = new char[] { 'x', 'y', 'n', '1', '2' };
+        private static int numbers_array_length = numbers_array.Length;
+        private static char[] operators_array = new char[] { '+', '-', '*', '/', '%' };
+        private static int operators_array_length = operators_array.Length;
+        /*private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
         private static char[] plus_minus_array = new char[] { '+', '-', '*', '/', '%', ')' };
         private static char[] operators_array = new char[] { '+', '*', '/', '%', ')' };
         private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
@@ -94,6 +98,9 @@ namespace DDGFinder
             { '8', array_left },
             { '9', array_left }
         };
+        private static int MUTATION_ADD_LEFT = 0;
+        private static int MUTATION_ADD_RIGHT = 1;
+        private static int MUTATION_DELETE = 2;
 
         private ObservableCollection<Topology> topologies = new ObservableCollection<Topology>(new List<Topology>(100));
         ObservableCollection<Topology> Topologies
@@ -195,28 +202,31 @@ namespace DDGFinder
             int mod = i % 10;
             idsValues[div, mod] = "";
             stateOrResultsValues[div, mod] = "Allocating and creating...";
-            await Task.Run(() => AllocateCreateAndComputeAsync(i));
-        }
-
-        private void AllocateCreateAndComputeAsync(int i)
-        {
             topologies[i] = new Topology(numberOfNodesValue);
-            CreateRandomAsync(i);
-            CalculateDDAsync(i);
+            await Task.Run(() => CreateRandomIdAndComputeAsync(i));
         }
 
-        private void CreateRandomAsync(int i)
+        private void CreateRandomIdAndComputeAsync(int i)
         {
-            bool disconnected = true;
-            while (disconnected)
+            try
             {
-                topologies[i].setIdAndPopulate(getValidRandomId());
-                disconnected = topologies[i].isDisconnected();
+                bool disconnected = true;
+                while (disconnected)
+                {
+                    topologies[i].setIdAndPopulate(getValidRandomId());
+                    disconnected = topologies[i].isDisconnected();
+                }
+                int div = i / 10;
+                int mod = i % 10;
+                idsValues[div, mod] = topologies[i].Id;
+                stateOrResultsValues[div, mod] = "Waiting to start";            
+                topologies[i].calculateDD();
+                stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
             }
-            int div = i / 10;
-            int mod = i % 10;
-            idsValues[div, mod] = topologies[i].Id;
-            stateOrResultsValues[div, mod] = "Waiting to start";
+            catch (Exception e)
+            {
+                Console.WriteLine("CreateRandomIdAndComputeAsync: " + e.ToString());
+            }
         }
 
         private void DoIterations_Click(object sender, RoutedEventArgs e)
@@ -228,14 +238,88 @@ namespace DDGFinder
 
         private async Task Iterate()
         {
-            
+            List<Task> tasks = new List<Task>();
+            for(int i = 45; i < 46; i++)
+            {
+                tasks.Add(Task.Run(() => MutateIdAndComputeAsync(i)));
+            }
+            for(int i = 90; i < 100; i++)
+            {
+                tasks.Add(Task.Run(() => CreateRandomIdAndComputeAsync(i)));
+            }
+            Task.WaitAll(tasks.ToArray());
+            orderTopologiesByPuntuation();
+            SetField(ref appState, AppState.IDLE, "StateIsIdle");
         }
 
-        private void CalculateDDAsync(int i)
+        private void MutateIdAndComputeAsync(int i)
         {
+            string idToMutate = topologies[i - 45].Id;
+            bool disconnected = true;
+            while (disconnected)
+            {
+                topologies[i].setIdAndPopulate(mutateId(idToMutate));
+                disconnected = topologies[i].isDisconnected();
+            }
+            int div = i / 10;
+            int mod = i % 10;
+            idsValues[div, mod] = topologies[i].Id;
+            stateOrResultsValues[div, mod] = "Waiting to start";
             topologies[i].calculateDD();
             stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
         }
+
+        private string mutateId(string id)
+        {
+            int posToMutate = r.Next(id.Length);
+            char charToMutate = id[posToMutate];
+            string newId = "";
+            if (numbers_and_operators_array.Contains(charToMutate))
+            {
+                char[] arrayToUse;
+                int arrayToUseLength;
+                if (numbers_array.Contains(charToMutate))
+                {
+                    arrayToUse = numbers_array;
+                    arrayToUseLength = numbers_array_length;
+                } else
+                {
+                    arrayToUse = operators_array;
+                    arrayToUseLength = operators_array_length;
+                }
+                char newChar = charToMutate;
+                while (newChar == charToMutate)
+                    newChar = arrayToUse[r.Next(arrayToUseLength)];
+                if (newChar == '-' && posToMutate == 0)
+                    newId = id.Remove(0, 1);
+                else
+                    newId = id.Substring(0, posToMutate) + newChar + id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+            } else if (charToMutate == '(')
+            {
+                int option = r.Next(4);
+                if (option < 2)
+                {
+                    int offset = 0;
+                    if (option == MUTATION_ADD_LEFT)
+                        offset += 1;
+                    newId = id.Substring(0, posToMutate + offset) + numbers_array[r.Next(numbers_array_length)] +
+                            operators_array[operators_array_length] + id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
+                } else
+                {
+                    newId = id.Substring(0, posToMutate) + numbers_array[r.Next(numbers_array_length)];
+                    if (id[posToMutate + 1] != '-')
+                        newId += operators_array[operators_array_length];
+                    newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+                }
+            } else if (charToMutate == ')')
+            {
+                // TODO
+                newId = id;
+            }
+            return newId;
+        }
+
+
 
         private void orderTopologiesByPuntuation()
         {
@@ -270,7 +354,6 @@ namespace DDGFinder
 
         private string getValidRandomId()
         {
-            Random r = new Random();
             int length = r.Next(minLengthValue, maxLengthValue);
             char aux = randomChar();
             while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')

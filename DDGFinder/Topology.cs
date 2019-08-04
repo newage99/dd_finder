@@ -39,17 +39,32 @@ namespace DDGFinder
 
         public void setIdAndPopulate(string id)
         {
+            if (id == null || id.Length <= 0)
+            {
+                int a = 0;
+            }
             disconnected_counter = 0;
             correctly_populated = false;
             this.id = id;
-            idToCompile = id.Replace("1", "1M").Replace("2", "2M");
             populate();
+        }
+
+        private void clear()
+        {
+            for(int i = 0; i < size; i++)
+            {
+                for(int j = 0; j < size; j++)
+                {
+                    matrix[i, j] = false;
+                }
+            }
         }
 
         private void populate()
         {
             if (matrix == null)
                 return;
+            clear();
             ExpressionInterpreter.Result result;
             for (int x = 0; x < size; x++)
             {
@@ -118,6 +133,8 @@ namespace DDGFinder
 
         public void calculateDD()
         {
+            degree = 0;
+            diameter = 0;
             int actualDegree;
             for (int i = 0; i < size; i++)
             {
@@ -156,6 +173,10 @@ namespace DDGFinder
                                 }
                             }
                             toVisitPos += 1;
+                        }
+                        if (toVisitNodesCount == toVisitNodes.Count)
+                        {
+                            int a = 0;
                         }
                         actualDiameter += 1;
                     }

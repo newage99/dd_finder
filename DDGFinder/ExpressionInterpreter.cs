@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace DDGFinder
