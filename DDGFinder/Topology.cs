@@ -156,32 +156,38 @@ namespace DDGFinder
                     int toVisitPos = 0;
                     int actualDiameter = 0;
                     bool notFounded = true;
-                    while (toVisitNodes.Count < size && notFounded)
+                    try
                     {
-                        int toVisitNodesCount = toVisitNodes.Count;
-                        for (int x = toVisitPos; x < toVisitNodesCount && toVisitNodes.Count < size && notFounded; x++)
+                        while (toVisitNodes.Count < size && notFounded)
                         {
-                            int toVisit = toVisitNodes[toVisitPos];
-                            for (int y = 0; y < size && notFounded; y++)
+                            int toVisitNodesCount = toVisitNodes.Count;
+                            for (int x = toVisitPos; x < toVisitNodesCount && toVisitNodes.Count < size && notFounded; x++)
                             {
-                                if (matrix[toVisit, y])
+                                int toVisit = toVisitNodes[toVisitPos];
+                                for (int y = 0; y < size && notFounded; y++)
                                 {
-                                    if (y == j)
-                                        notFounded = false;
-                                    if (listNotContainsValue(toVisitNodes, y))
-                                        toVisitNodes.Add(y);
+                                    if (matrix[toVisit, y])
+                                    {
+                                        if (y == j)
+                                            notFounded = false;
+                                        if (listNotContainsValue(toVisitNodes, y))
+                                            toVisitNodes.Add(y);
+                                    }
                                 }
+                                toVisitPos += 1;
                             }
-                            toVisitPos += 1;
+                            if (toVisitNodesCount == toVisitNodes.Count)
+                            {
+                                int a = 0;
+                            }
+                            actualDiameter += 1;
                         }
-                        if (toVisitNodesCount == toVisitNodes.Count)
-                        {
-                            int a = 0;
-                        }
-                        actualDiameter += 1;
+                        if (actualDiameter > diameter)
+                            diameter = actualDiameter;
+                    } catch (Exception e)
+                    {
+                        Console.WriteLine("calculateDD: " + e.ToString());
                     }
-                    if (actualDiameter > diameter)
-                        diameter = actualDiameter;
                 }
             }
         }

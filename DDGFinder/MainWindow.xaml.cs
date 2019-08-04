@@ -34,10 +34,12 @@ namespace DDGFinder
         private AppState appState = AppState.INITIAL;
         private static readonly Random r = new Random();
         private bool requestedToStopIterating = false;
-        private BindableTwoDArray<string> idsValues =
+        /*private BindableTwoDArray<string> idsValues =
             new BindableTwoDArray<string>(10, 10);
         private BindableTwoDArray<string> stateOrResultsValues =
-            new BindableTwoDArray<string>(10, 10);
+            new BindableTwoDArray<string>(10, 10);*/
+        private ObservableCollection<string> idsValues = new ObservableCollection<string>();
+        private ObservableCollection<string> stateOrResultsValues = new ObservableCollection<string>();
         private int numberOfNodesValue = 1;
         private int minLengthValue = 10;
         private int maxLengthValue = 20;
@@ -101,19 +103,15 @@ namespace DDGFinder
         private static int MUTATION_ADD_LEFT = 0;
         private static int MUTATION_ADD_RIGHT = 1;
         private static int MUTATION_DELETE = 2;
+        private ObservableCollection<Topology> topologies = new ObservableCollection<Topology>();
 
-        private ObservableCollection<Topology> topologies = new ObservableCollection<Topology>(new List<Topology>(100));
-        ObservableCollection<Topology> Topologies
-        {
-            get { return topologies; }
-        }
-
-        public BindableTwoDArray<string> Ids
+        public ObservableCollection<string> Ids
         {
             get { return idsValues; }
         }
-        public BindableTwoDArray<string> StateOrResults
+        public ObservableCollection<string> StateOrResults
         {
+
             get { return stateOrResultsValues; }
         }
         public bool StateIsIdle
@@ -163,6 +161,8 @@ namespace DDGFinder
             for (int i = 0; i < 100; i++)
             {
                 topologies.Add(null);
+                idsValues.Add(null);
+                stateOrResultsValues.Add(null);
             }
         }
 
@@ -192,18 +192,22 @@ namespace DDGFinder
                 tasks.Add(InitTopology(i));
             }
             Task.WaitAll(tasks.ToArray());
+            OnPropertyChanged("Ids");
             orderTopologiesByPuntuation();
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
         }
 
         private async Task InitTopology(int i)
         {
-            int div = i / 10;
-            int mod = i % 10;
-            idsValues[div, mod] = "";
-            stateOrResultsValues[div, mod] = "Allocating and creating...";
+            idsValues[i] = "";
+            stateOrResultsValues[i] = "Allocating and creating...";
             topologies[i] = new Topology(numberOfNodesValue);
             await Task.Run(() => CreateRandomIdAndComputeAsync(i));
+        }
+
+        private Task CreateRandomIdAndCompute(int i)
+        {
+            return Task.Run(() => CreateRandomIdAndComputeAsync(i));
         }
 
         private void CreateRandomIdAndComputeAsync(int i)
@@ -216,12 +220,10 @@ namespace DDGFinder
                     topologies[i].setIdAndPopulate(getValidRandomId());
                     disconnected = topologies[i].isDisconnected();
                 }
-                int div = i / 10;
-                int mod = i % 10;
-                idsValues[div, mod] = topologies[i].Id;
-                stateOrResultsValues[div, mod] = "Waiting to start";            
+                idsValues[i] = topologies[i].Id;
+                stateOrResultsValues[i] = "Waiting to start";            
                 topologies[i].calculateDD();
-                stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
+                stateOrResultsValues[i] = topologies[i].DisconnectedCounterDegreeAndDiameter;
             }
             catch (Exception e)
             {
@@ -239,17 +241,22 @@ namespace DDGFinder
         private async Task Iterate()
         {
             List<Task> tasks = new List<Task>();
-            for(int i = 45; i < 46; i++)
+            for(int i = 45; i < 90; i++)
             {
-                tasks.Add(Task.Run(() => MutateIdAndComputeAsync(i)));
+                tasks.Add(MutateIdAndCompute(i));
             }
             for(int i = 90; i < 100; i++)
             {
-                tasks.Add(Task.Run(() => CreateRandomIdAndComputeAsync(i)));
+                tasks.Add(CreateRandomIdAndCompute(i));
             }
             Task.WaitAll(tasks.ToArray());
             orderTopologiesByPuntuation();
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
+        }
+
+        private Task MutateIdAndCompute(int i)
+        {
+            return Task.Run(() => MutateIdAndComputeAsync(i));
         }
 
         private void MutateIdAndComputeAsync(int i)
@@ -261,12 +268,10 @@ namespace DDGFinder
                 topologies[i].setIdAndPopulate(mutateId(idToMutate));
                 disconnected = topologies[i].isDisconnected();
             }
-            int div = i / 10;
-            int mod = i % 10;
-            idsValues[div, mod] = topologies[i].Id;
-            stateOrResultsValues[div, mod] = "Waiting to start";
+            idsValues[i] = topologies[i].Id;
+            stateOrResultsValues[i] = "Waiting to start";
             topologies[i].calculateDD();
-            stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
+            stateOrResultsValues[i] = topologies[i].DisconnectedCounterDegreeAndDiameter;
         }
 
         private string mutateId(string id)
@@ -302,13 +307,15 @@ namespace DDGFinder
                     int offset = 0;
                     if (option == MUTATION_ADD_LEFT)
                         offset += 1;
-                    newId = id.Substring(0, posToMutate + offset) + numbers_array[r.Next(numbers_array_length)] +
-                            operators_array[operators_array_length] + id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
+                    newId = id.Substring(0, posToMutate + offset) +
+                        numbers_array[r.Next(numbers_array_length)] +
+                        operators_array[r.Next(operators_array_length)] +
+                        id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
                 } else
                 {
                     newId = id.Substring(0, posToMutate) + numbers_array[r.Next(numbers_array_length)];
                     if (id[posToMutate + 1] != '-')
-                        newId += operators_array[operators_array_length];
+                        newId += operators_array[r.Next(operators_array_length)];
                     newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
                 }
             } else if (charToMutate == ')')
@@ -318,8 +325,6 @@ namespace DDGFinder
             }
             return newId;
         }
-
-
 
         private void orderTopologiesByPuntuation()
         {
@@ -342,8 +347,8 @@ namespace DDGFinder
             topologies = newTopologies;
             for (int i = 0; i < 100; i++)
             {
-                idsValues[i / 10, i % 10] = topologies[i].Id;
-                stateOrResultsValues[i / 10, i % 10] = topologies[i].DisconnectedCounterDegreeAndDiameter;
+                idsValues[i] = topologies[i].Id;
+                stateOrResultsValues[i] = topologies[i].DisconnectedCounterDegreeAndDiameter;
             }
         }
 
