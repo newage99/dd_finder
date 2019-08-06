@@ -12,6 +12,7 @@ namespace DDGFinder
         private string idToCompile;
         public int degree = 0;
         public int diameter = 0;
+        public int second_puntuation = 0;
         public int disconnected_counter = 0;
         public bool correctly_populated = false;
 
@@ -26,9 +27,14 @@ namespace DDGFinder
             get { return degree + diameter; }
         }
 
-        public string DisconnectedCounterDegreeAndDiameter
+        public int SecondPuntuation
         {
-            get { return disconnected_counter.ToString() + ": " + degree.ToString() + "  " + diameter.ToString(); }
+            get { return second_puntuation; }
+        }
+
+        public string DisconnectedCounterDegreeDiameterAndSecondPuntuation
+        {
+            get { return disconnected_counter.ToString() + ": " + degree.ToString() + " " + diameter.ToString() + " " + SecondPuntuation.ToString(); }
         }
 
         public Topology(int size)
@@ -77,18 +83,11 @@ namespace DDGFinder
                             .Replace("n", size.ToString()).Replace("*-", "*0-").Replace("(-", "(0-");
                         if (input.StartsWith("-"))
                             input = "0" + input;
-                        int connectTo = new ExpressionInterpreter().Compute(input, out result);
-                        if (result == ExpressionInterpreter.Result.OK)
+                        bool connect = new ExpressionInterpreter().Compute(input, out result);
+                        if (result == ExpressionInterpreter.Result.OK && connect)
                         {
-                            if (connectTo >= 0 && connectTo < size && connectTo != x && !matrix[x, connectTo])
-                            {
-                                matrix[x, connectTo] = true;
-                                matrix[connectTo, x] = true;
-                            }
-                        }
-                        else
-                        {
-                            int a = 0;
+                            matrix[x, y] = true;
+                            matrix[y, x] = true;
                         }
                     } catch (Exception e)
                     {
@@ -135,6 +134,7 @@ namespace DDGFinder
         {
             degree = 0;
             diameter = 0;
+            second_puntuation = 0;
             int actualDegree;
             for (int i = 0; i < size; i++)
             {
@@ -147,48 +147,53 @@ namespace DDGFinder
                 if (actualDegree > degree)
                     degree = actualDegree;
             }
-            for (int i = 0; i < size - 1; i++)
+            for (int i = 0; i < size; i++)
             {
-                for (int j = i+1; j < size; j++)
+                actualDegree = 0;
+                for (int j = 0; j < size; j++)
                 {
-                    List<int> toVisitNodes = new List<int>();
-                    toVisitNodes.Add(i);
-                    int toVisitPos = 0;
-                    int actualDiameter = 0;
-                    bool notFounded = true;
-                    try
+                    if (matrix[i, j])
+                        actualDegree += 1;
+                    if (i < size - 1 && j > i)
                     {
-                        while (toVisitNodes.Count < size && notFounded)
+                        List<int> toVisitNodes = new List<int>();
+                        toVisitNodes.Add(i);
+                        int toVisitPos = 0;
+                        int actualDiameter = 0;
+                        bool notFounded = true;
+                        try
                         {
-                            int toVisitNodesCount = toVisitNodes.Count;
-                            for (int x = toVisitPos; x < toVisitNodesCount && toVisitNodes.Count < size && notFounded; x++)
+                            while (toVisitNodes.Count < size && notFounded)
                             {
-                                int toVisit = toVisitNodes[toVisitPos];
-                                for (int y = 0; y < size && notFounded; y++)
+                                int toVisitNodesCount = toVisitNodes.Count;
+                                for (int x = toVisitPos; x < toVisitNodesCount && toVisitNodes.Count < size && notFounded; x++)
                                 {
-                                    if (matrix[toVisit, y])
+                                    int toVisit = toVisitNodes[toVisitPos];
+                                    for (int y = 0; y < size && notFounded; y++)
                                     {
-                                        if (y == j)
-                                            notFounded = false;
-                                        if (listNotContainsValue(toVisitNodes, y))
-                                            toVisitNodes.Add(y);
+                                        if (matrix[toVisit, y])
+                                        {
+                                            if (y == j)
+                                                notFounded = false;
+                                            if (listNotContainsValue(toVisitNodes, y))
+                                                toVisitNodes.Add(y);
+                                        }
                                     }
+                                    toVisitPos += 1;
                                 }
-                                toVisitPos += 1;
+                                actualDiameter += 1;
                             }
-                            if (toVisitNodesCount == toVisitNodes.Count)
-                            {
-                                int a = 0;
-                            }
-                            actualDiameter += 1;
+                            if (actualDiameter > diameter)
+                                diameter = actualDiameter;
+                            second_puntuation += actualDiameter;
                         }
-                        if (actualDiameter > diameter)
-                            diameter = actualDiameter;
-                    } catch (Exception e)
-                    {
-                        Console.WriteLine("calculateDD: " + e.ToString());
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("calculateDD: " + e.ToString());
+                        }
                     }
                 }
+                second_puntuation += actualDegree * (size - i);
             }
         }
 

@@ -13,7 +13,7 @@ namespace DDGFinder
         Stack<decimal> numbers = new Stack<decimal>();
         Result result = Result.OK;
 
-        public int Compute(string expression, out Result result)
+        public bool Compute(string expression, out Result result)
         {
             numbers.Clear();
             this.expression = expression.Clone().ToString();
@@ -25,7 +25,9 @@ namespace DDGFinder
                 result = Result.NumberStackWrongElements;
             else
                 result = this.result;
-            return numbers.Count > 0 ? (int)decimal.Round(numbers.Pop()) : -1;
+            if (numbers.Count <= 0)
+                return false;
+            return ((int)decimal.Round(numbers.Pop())) > 0 ? true : false;
         }
 
         private Symbol getNextSymbol()
