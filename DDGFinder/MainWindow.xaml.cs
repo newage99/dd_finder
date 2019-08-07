@@ -256,9 +256,9 @@ namespace DDGFinder
             while (leftIterations > 0)
             {
                 tasks.Clear();
-                for (int i = 45; i < 90; i++)
+                for (int i = 48; i < 96; i++)
                     tasks.Add(MutateIdAndCompute(i));
-                for (int i = 90; i < 100; i++)
+                for (int i = 96; i < 100; i++)
                     tasks.Add(CreateRandomIdAndCompute(i));
                 Task.WaitAll(tasks.ToArray());
                 orderTopologiesByPuntuation();
@@ -308,50 +308,84 @@ namespace DDGFinder
 
         private string mutateIdInner(string id)
         {
-            int posToMutate = r.Next(id.Length);
-            char charToMutate = id[posToMutate];
+            int posToMutate = 0;
+            char charToMutate = ' ';
+            try
+            {
+                posToMutate = r.Next(id.Length);
+                charToMutate = id[posToMutate];
+            } catch (Exception e)
+            {
+                int a = 0;
+            }
             string newId = "";
             if (numbers_and_operators_array.Contains(charToMutate))
             {
-                char[] arrayToUse;
-                int arrayToUseLength;
-                if (numbers_array.Contains(charToMutate))
+                try
                 {
-                    arrayToUse = numbers_array;
-                    arrayToUseLength = numbers_array_length;
-                }
-                else
+                    char[] arrayToUse;
+                    int arrayToUseLength;
+                    if (numbers_array.Contains(charToMutate))
+                    {
+                        arrayToUse = numbers_array;
+                        arrayToUseLength = numbers_array_length;
+                    }
+                    else
+                    {
+                        arrayToUse = operators_array;
+                        arrayToUseLength = operators_array_length;
+                    }
+                    char newChar = charToMutate;
+                    while (newChar == charToMutate)
+                        newChar = arrayToUse[r.Next(arrayToUseLength)];
+                    if (newChar == '-' && posToMutate == 0)
+                        newId = id.Remove(0, 1);
+                    else
+                        newId = id.Substring(0, posToMutate) + newChar + id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+                } catch (Exception e)
                 {
-                    arrayToUse = operators_array;
-                    arrayToUseLength = operators_array_length;
+                    int a = 0;
                 }
-                char newChar = charToMutate;
-                while (newChar == charToMutate)
-                    newChar = arrayToUse[r.Next(arrayToUseLength)];
-                if (newChar == '-' && posToMutate == 0)
-                    newId = id.Remove(0, 1);
-                else
-                    newId = id.Substring(0, posToMutate) + newChar + id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
             }
             else if (charToMutate == '(' || charToMutate == ')')
             {
                 int option = r.Next(4);
                 if (option < 2)
                 {
-                    int offset = 0;
-                    if (option == MUTATION_ADD_RIGHT)
-                        offset += 1;
-                    newId = id.Substring(0, posToMutate + offset) +
-                        operators_array[r.Next(operators_array_length)] +
-                        numbers_array[r.Next(numbers_array_length)] +
-                        id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
-                }
-                else
+                    try
+                    {
+                        int offset = 0;
+                        if (option == MUTATION_ADD_RIGHT)
+                            offset += 1;
+                        newId = id.Substring(0, posToMutate + offset);
+                        if (charToMutate == '(')
+                            newId += numbers_array[r.Next(numbers_array_length)] + operators_array[r.Next(operators_array_length)];
+                        else
+                            newId += operators_array[r.Next(operators_array_length)] + numbers_array[r.Next(numbers_array_length)];
+                        newId += id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
+                    }
+                    catch (Exception e)
+                    {
+                        int a = 0;
+                    }
+                } else
                 {
-                    newId = id.Substring(0, posToMutate) + operators_array[r.Next(operators_array_length)];
-                    if (posToMutate < id.Length - 1 && id[posToMutate + 1] != '-')
-                        newId += numbers_array[r.Next(numbers_array_length)];
-                    newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+                    try
+                    {
+                        newId = id.Substring(0, posToMutate);
+                        if (charToMutate == '(')
+                        {
+                            newId += numbers_array[r.Next(numbers_array_length)];
+                            if (posToMutate < id.Length - 1 && id[posToMutate + 1] != '-')
+                                newId += operators_array[r.Next(operators_array_length)];
+                        } else
+                            newId += operators_array[r.Next(operators_array_length)] + numbers_array[r.Next(numbers_array_length)];
+                        newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+                    }
+                    catch (Exception e)
+                    {
+                        int a = 0;
+                    }
                 }
             }
             return newId;
@@ -359,10 +393,21 @@ namespace DDGFinder
 
         private string mutateId(string id)
         {
-            int numberOfTimesToMutate = r.Next(3) + 1;
+            int numberOfTimesToMutate = r.Next(5) + 1;
             string mutatedId = id;
             for (int i = 0; i < numberOfTimesToMutate; i++)
+            {
+                if (mutatedId.Length <= 0)
+                {
+                    // TODO
+                    // TODO
+                    int a = 0;
+                    // TODO
+                    // TODO
+                }
                 mutatedId = mutateIdInner(mutatedId);
+            }
+                
             return mutatedId;
         }
 

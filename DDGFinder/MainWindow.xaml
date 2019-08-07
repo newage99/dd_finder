@@ -9,9 +9,9 @@
         Height="480"
         MinHeight="480"
         MaxHeight="480"
-        Width="1400"
-        MinWidth="1400"
-        MaxWidth="1400"
+        Width="1520"
+        MinWidth="1520"
+        MaxWidth="1520"
         >
     <Grid>
         <Grid.RowDefinitions>
