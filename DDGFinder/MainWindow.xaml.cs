@@ -43,50 +43,26 @@ namespace DDGFinder
         private int numberOfNodesValue = 1;
         private int minLengthValue = 10;
         private int maxLengthValue = 20;
-        private static string characters = "xyn+-*/%()2";
-        private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%' };
-        private static char[] numbers_array = new char[] { 'x', 'y', 'n', '2' };
+        private static string characters = "xyn+-*/%^L()";
+        private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%', '^', 'L' };
+        private static char[] numbers_array = new char[] { 'x', 'y', 'n' };
         private static int numbers_array_length = numbers_array.Length;
-        private static char[] operators_array = new char[] { '+', '-', '*', '/', '%' };
+        private static char[] operators_array = new char[] { '+', '-', '*', '/', '%', '^', 'L' };
         private static int operators_array_length = operators_array.Length;
-        /*private static char[] xyn_array = new char[] { 'x', 'y', 'n', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '(' };
-        private static char[] plus_minus_array = new char[] { '+', '-', '*', '/', '%', ')' };
-        private static char[] operators_array = new char[] { '+', '*', '/', '%', ')' };
-        private static Dictionary<char, char[]> forbidden_right_chars = new Dictionary<char, char[]>()
-        {
-            { 'x', xyn_array },
-            { 'y', xyn_array },
-            { 'n', xyn_array },
-            { '+', plus_minus_array },
-            { '-', plus_minus_array },
-            { '*', operators_array },
-            { '/', operators_array },
-            { '%', operators_array },
-            { '(', new char[] { '+', '*', '/', '%', ')' } },
-            { ')', numbers_array },
-            { '0', numbers_array },
-            { '1', numbers_array },
-            { '2', numbers_array },
-            { '3', numbers_array },
-            { '4', numbers_array },
-            { '5', numbers_array },
-            { '6', numbers_array },
-            { '7', numbers_array },
-            { '8', numbers_array },
-            { '9', numbers_array }
-        };*/
         private static char[] array_left = new char[] { 'x', 'y', 'n', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        private static char[] operators_and_close_parenthesis_array_left = new char[] { '+', '-', '*', '/', '%', '(' };
+        private static char[] operators_and_close_parenthesis_array_left = new char[] { '+', '-', '*', '/', '%', '^', 'L', '(' };
         private static Dictionary<char, char[]> forbidden_left_chars = new Dictionary<char, char[]>()
         {
             { 'x', array_left },
             { 'y', array_left },
             { 'n', array_left },
             { '+', operators_and_close_parenthesis_array_left },
-            { '-', new char[] { '+', '-', '/', '%' } },
+            { '-', new char[] { '+', '-', '/', '%', 'L' } },
             { '*', operators_and_close_parenthesis_array_left },
             { '/', operators_and_close_parenthesis_array_left },
             { '%', operators_and_close_parenthesis_array_left },
+            { '^', operators_and_close_parenthesis_array_left },
+            { 'L', operators_and_close_parenthesis_array_left },
             { '(', array_left },
             { ')', operators_and_close_parenthesis_array_left },
             { '0', array_left },
@@ -296,7 +272,7 @@ namespace DDGFinder
                     {
                         stateOrResultsValues[i] = "Waiting to start";
                         topologies[i].calculateDD();
-                        stateOrResultsValues[i] = topologies[i].DisconnectedCounterDegreeDiameterAndSecondPuntuation;
+                        stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
                     }
                 }
             }
@@ -346,6 +322,10 @@ namespace DDGFinder
                 {
                     int a = 0;
                 }
+                if (newId.Contains('1') || newId.Contains('3') || newId.Contains('4') || newId.Contains('5') || newId.Contains('6') || newId.Contains('7') || newId.Contains('8') || newId.Contains('9'))
+                {
+                    int a = 0;
+                }
             }
             else if (charToMutate == '(' || charToMutate == ')')
             {
@@ -359,9 +339,9 @@ namespace DDGFinder
                             offset += 1;
                         newId = id.Substring(0, posToMutate + offset);
                         if (charToMutate == '(')
-                            newId += numbers_array[r.Next(numbers_array_length)] + operators_array[r.Next(operators_array_length)];
+                            newId += numbers_array[r.Next(numbers_array_length)].ToString() + operators_array[r.Next(operators_array_length)].ToString();
                         else
-                            newId += operators_array[r.Next(operators_array_length)] + numbers_array[r.Next(numbers_array_length)];
+                            newId += operators_array[r.Next(operators_array_length)].ToString() + numbers_array[r.Next(numbers_array_length)].ToString();
                         newId += id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
                     }
                     catch (Exception e)
@@ -379,7 +359,7 @@ namespace DDGFinder
                             if (posToMutate < id.Length - 1 && id[posToMutate + 1] != '-')
                                 newId += operators_array[r.Next(operators_array_length)];
                         } else
-                            newId += operators_array[r.Next(operators_array_length)] + numbers_array[r.Next(numbers_array_length)];
+                            newId += operators_array[r.Next(operators_array_length)].ToString() + numbers_array[r.Next(numbers_array_length)].ToString();
                         newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
                     }
                     catch (Exception e)
@@ -388,26 +368,19 @@ namespace DDGFinder
                     }
                 }
             }
+            else
+            {
+                int a = 0;
+            }
             return newId;
         }
 
         private string mutateId(string id)
         {
-            int numberOfTimesToMutate = r.Next(5) + 1;
+            int numberOfTimesToMutate = r.Next(4) + 1;
             string mutatedId = id;
             for (int i = 0; i < numberOfTimesToMutate; i++)
-            {
-                if (mutatedId.Length <= 0)
-                {
-                    // TODO
-                    // TODO
-                    int a = 0;
-                    // TODO
-                    // TODO
-                }
                 mutatedId = mutateIdInner(mutatedId);
-            }
-                
             return mutatedId;
         }
 
@@ -435,13 +408,13 @@ namespace DDGFinder
             for (int i = 0; i < 100; i++)
             {
                 idsValues[i] = topologies[i].Id;
-                stateOrResultsValues[i] = topologies[i].DisconnectedCounterDegreeDiameterAndSecondPuntuation;
+                stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
             }
         }
 
         private static char randomChar()
         {
-            if (r.Next(26) == 0)
+            if (r.Next(32) == 0)
             {
                 return r.Next(1) == 0 ? '(' : ')';
             }
@@ -452,54 +425,65 @@ namespace DDGFinder
         {
             int length = r.Next(minLengthValue, maxLengthValue);
             char aux = randomChar();
-            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == ')')
+            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == '^' || aux == 'L' || aux == ')')
                 aux = randomChar();
             string result = aux.ToString();
             int parenCounter = aux != '(' ? 0 : 1;
             int placeOfTheLastOpenParen = aux != '(' ? -10 : 0;
             string charsRemoved = "";
-            long d0 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
             for (int i = 1; i < length; i++)
             {
-                if (parenCounter > 0 && i+1 > length-parenCounter)
+                try
                 {
-                    while (result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
+                    if (parenCounter > 0 && i + 1 > length - parenCounter)
                     {
-                        charsRemoved += result[result.Length - 1];
-                        result = result.Substring(0, result.Length - 1);
-                    }
-                    while (parenCounter > 0)
-                    {
-                        result += ')';
-                        parenCounter -= 1;
-                    }
-                    break;
-                } else
-                {
-                    bool notDone = true;
-                    while (notDone)
-                    {
-                        aux = randomChar();
-                        if (!forbidden_left_chars[aux].Contains(result[i - 1])
-                            && (aux != ')' || (aux == ')' && (parenCounter > 0 && i-3 > placeOfTheLastOpenParen)))
-                            && (aux != '(' || (aux == '(' && i+4+parenCounter < length)))
+                        while (result.EndsWith("+") ||
+                            result.EndsWith("-") ||
+                            result.EndsWith("*") ||
+                            result.EndsWith("/") ||
+                            result.EndsWith("%") ||
+                            result.EndsWith("^") ||
+                            result.EndsWith("L")
+                            )
                         {
-                            result += aux;
-                            if (aux == '(')
+                            charsRemoved += result[result.Length - 1];
+                            result = result.Substring(0, result.Length - 1);
+                        }
+                        while (parenCounter > 0)
+                        {
+                            result += ')';
+                            parenCounter -= 1;
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        bool notDone = true;
+                        while (notDone)
+                        {
+                            aux = randomChar();
+                            if (!forbidden_left_chars[aux].Contains(result[i - 1])
+                                && (aux != ')' || (aux == ')' && (parenCounter > 0 && i - 3 > placeOfTheLastOpenParen)))
+                                && (aux != '(' || (aux == '(' && i + 4 + parenCounter < length)))
                             {
-                                parenCounter += 1;
-                                placeOfTheLastOpenParen = i;
+                                result += aux;
+                                if (aux == '(')
+                                {
+                                    parenCounter += 1;
+                                    placeOfTheLastOpenParen = i;
+                                }
+                                else if (aux == ')')
+                                    parenCounter -= 1;
+                                notDone = false;
                             }
-                            else if (aux == ')')
-                                parenCounter -= 1;
-                            notDone = false;
                         }
                     }
+                } catch (Exception e)
+                {
+                    int a = 0;
                 }
             }
-            long d1 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            Console.WriteLine("0: " + (d1 - d0).ToString());
-            while (result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%"))
+            while (result.EndsWith("+") || result.EndsWith("-") || result.EndsWith("*") || result.EndsWith("/") || result.EndsWith("%") || result.EndsWith("^") || result.EndsWith("L"))
             {
                 result = result.Substring(0, result.Length - 1);
             }
@@ -509,53 +493,57 @@ namespace DDGFinder
             if (!result.Contains("n")) notContains.Add('n');
             if (notContains.Count > 0)
             {
-                // We ensure 'x' and 'y' variables are in the id
-                int newLength = result.Length;
-                char[] order = new char[5] { 'x', 'y', 'n', '1', '2' };
-                Dictionary<char, int> orderCharToPos = new Dictionary<char, int>()
+                try
                 {
-                    { 'x', 0 },
-                    { 'y', 1 },
-                    { 'n', 2 },
-                    { '1', 3 },
-                    { '2', 4 }
-                };
-                List<int>[] positions = new List<int>[5];
-                for (int i = 0; i < 5; i++)
-                {
-                    positions[i] = new List<int>();
-                }
-                for (int i = 0; i < newLength; i++)
-                {
-                    for (int j = 0; j < 5; j++)
+                    // We ensure 'x' and 'y' variables are in the id
+                    int newLength = result.Length;
+                    char[] order = new char[5] { 'x', 'y', 'n', '1', '2' };
+                    Dictionary<char, int> orderCharToPos = new Dictionary<char, int>()
                     {
-                        if (result[i] == order[j])
-                            positions[j].Add(i);
+                        { 'x', 0 },
+                        { 'y', 1 },
+                        { 'n', 2 },
+                        { '1', 3 },
+                        { '2', 4 }
+                    };
+                    List<int>[] positions = new List<int>[5];
+                    for (int i = 0; i < 5; i++)
+                    {
+                        positions[i] = new List<int>();
                     }
-                }
-                for (int i = 0; i < notContains.Count; i++)
-                {
-                    char notContainChar = notContains[i];
-                    int pos = orderCharToPos[notContainChar];
-                    bool notAchieved = true;
-                    for (int j = 0; j < 5; j++)
+                    for (int i = 0; i < newLength; i++)
                     {
-                        if (j != pos && positions[j].Count > 1)
+                        for (int j = 0; j < 5; j++)
                         {
-                            int actualPos = positions[j][0];
-                            positions[j].RemoveAt(0);
-                            result = result.Substring(0, actualPos) + notContainChar +
-                                result.Substring(actualPos + 1, result.Length - (actualPos + 1));
-                            notAchieved = false;
-                            break;
+                            if (result[i] == order[j])
+                                positions[j].Add(i);
                         }
                     }
-                    if (notAchieved)
-                        result += "%" + notContainChar.ToString();
+                    for (int i = 0; i < notContains.Count; i++)
+                    {
+                        char notContainChar = notContains[i];
+                        int pos = orderCharToPos[notContainChar];
+                        bool notAchieved = true;
+                        for (int j = 0; j < 5; j++)
+                        {
+                            if (j != pos && positions[j].Count > 1)
+                            {
+                                int actualPos = positions[j][0];
+                                positions[j].RemoveAt(0);
+                                result = result.Substring(0, actualPos) + notContainChar +
+                                    result.Substring(actualPos + 1, result.Length - (actualPos + 1));
+                                notAchieved = false;
+                                break;
+                            }
+                        }
+                        if (notAchieved)
+                            result += "%" + notContainChar.ToString();
+                    }
+                } catch (Exception e)
+                {
+                    int a = 0;
                 }
             }
-            long d2 = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-            Console.WriteLine("1: " + (d2 - d1).ToString());
             return result;
         }
     }

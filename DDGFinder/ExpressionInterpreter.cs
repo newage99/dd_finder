@@ -45,6 +45,8 @@ namespace DDGFinder
                 case '*': return Symbol.Multiplication;
                 case '/': return Symbol.Division;
                 case '%': return Symbol.Modulus;
+                case '^': return Symbol.Exponential;
+                case 'L': return Symbol.Logarithm;
             }
             string exp = expression.Substring(pos - 1);
             if (regexNumber.IsMatch(exp)) {
@@ -148,8 +150,39 @@ namespace DDGFinder
                                 return;
                             }
                         }
-                        else
-                            numbers.Push(d1 % d2);
+                        numbers.Push(d1 % d2);
+                        break;
+                    case Symbol.Exponential:
+                        actualSymbol = getNextSymbol();
+                        Factor();
+                        if (result != Result.OK)
+                            return;
+                        d1 = numbers.Pop();
+                        d2 = numbers.Pop();
+                        if (d1 < 0)
+                        {
+                            result = Result.ExponentWrongInputs;
+                            return;
+                        } else if (d1 == 0 && d2 < 0)
+                        {
+                            result = Result.ExponentWrongInputs;
+                            return;
+                        }
+                        numbers.Push((decimal)Math.Pow((double)d1, (double)d2));
+                        break;
+                    case Symbol.Logarithm:
+                        actualSymbol = getNextSymbol();
+                        Factor();
+                        if (result != Result.OK)
+                            return;
+                        d1 = numbers.Pop();
+                        d2 = numbers.Pop();
+                        if (d1 < 0 || d2 < 0 || d2 == 1 || (d1 != 1 && d2 == 0))
+                        {
+                            result = Result.LogarithmWrongInputs;
+                            return;
+                        }
+                        numbers.Push((decimal)Math.Log((double)d1, (double)d2));
                         break;
                     default: return;
                 }
@@ -181,12 +214,12 @@ namespace DDGFinder
 
         private enum Symbol
         {
-            None, Addition, Substraction, Multiplication, Division, Modulus, OpenParenthesis, CloseParenthesis, Number, ExpressionEnd
+            None, Addition, Substraction, Multiplication, Division, Modulus, Exponential, Logarithm, OpenParenthesis, CloseParenthesis, Number, ExpressionEnd
         }
 
         public enum Result
         {
-            OK, DivisionByZero, ModulusOnZero, FactorWrongSymbol, CloseParenthesisMissing, GetNextSymbolWrongSymbol, NumberStackWrongElements
+            OK, DivisionByZero, ModulusOnZero, ExponentWrongInputs, LogarithmWrongInputs, FactorWrongSymbol, CloseParenthesisMissing, GetNextSymbolWrongSymbol, NumberStackWrongElements
         }
     }
 }
