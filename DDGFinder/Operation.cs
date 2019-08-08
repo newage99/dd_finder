@@ -8,5 +8,7 @@ namespace DDGFinder
 {
     class Operation
     {
+        int pos;
+
     }
 }

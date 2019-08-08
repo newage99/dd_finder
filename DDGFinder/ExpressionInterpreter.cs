@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace DDGFinder
 {
@@ -27,7 +28,7 @@ namespace DDGFinder
                 result = this.result;
             if (numbers.Count <= 0)
                 return false;
-            return ((int)decimal.Round(numbers.Pop())) > 0 ? true : false;
+            return decimal.Round(numbers.Pop()) > 0M ? true : false;
         }
 
         private Symbol getNextSymbol()
@@ -60,6 +61,22 @@ namespace DDGFinder
             return Symbol.None;
         }
 
+        private decimal toDecimal(BigInteger input)
+        {
+            if ((BigInteger)decimal.MaxValue < input)
+                return decimal.MaxValue;
+            else if ((BigInteger)decimal.MinValue > input)
+                return decimal.MinValue;
+            try
+            {
+                return (decimal)input;
+            } catch (Exception e)
+            {
+                int a = 0;
+            }
+            return 0;
+        }
+
         private void Expression()
         {
             Term();
@@ -67,6 +84,8 @@ namespace DDGFinder
                 return;
             while (true)
             {
+                decimal d1;
+                decimal d2;
                 switch (actualSymbol)
                 {
                     case Symbol.Addition:
@@ -76,7 +95,15 @@ namespace DDGFinder
                         Term();
                         if (result != Result.OK)
                             return;
-                        numbers.Push(numbers.Pop() + numbers.Pop());
+                        d1 = numbers.Pop();
+                        d2 = numbers.Pop();
+                        try
+                        {
+                            numbers.Push(toDecimal((BigInteger)d1 + (BigInteger)d2));
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                         break;
                     case Symbol.Substraction:
                         actualSymbol = getNextSymbol();
@@ -85,11 +112,53 @@ namespace DDGFinder
                         Term();
                         if (result != Result.OK)
                             return;
-                        numbers.Push(numbers.Pop() - numbers.Pop());
+                        d1 = numbers.Pop();
+                        d2 = numbers.Pop();
+                        try
+                        {
+                            numbers.Push(toDecimal((BigInteger)d1 - (BigInteger)d2));
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                         break;
                     default: return;
                 }
             }
+        }
+
+        private decimal toDecimal(double input)
+        {
+            BigInteger a = 0;
+            BigInteger b = 0;
+            BigInteger bigInput = (BigInteger)input;
+            try
+            {
+                a = (BigInteger)decimal.MaxValue;
+            }
+            catch (Exception e)
+            {
+                int aa = 0;
+            }
+            try
+            {
+                b = (BigInteger)decimal.MinValue;
+            } catch (Exception e)
+            {
+                int aa = 0;
+            }
+            try {
+                if (bigInput > a)
+                    return decimal.MaxValue;
+                else if (bigInput < b)
+                    return decimal.MinValue;
+                else
+                    return (decimal)bigInput;
+            } catch (Exception e)
+            {
+                int aa = 0;
+            }
+            return 1;
         }
 
         private void Term()
@@ -101,7 +170,7 @@ namespace DDGFinder
             {
                 decimal d1;
                 decimal d2;
-                int d2Integer;
+                BigInteger d2Integer;
                 switch (actualSymbol)
                 {
                     case Symbol.Multiplication:
@@ -109,7 +178,15 @@ namespace DDGFinder
                         Factor();
                         if (result != Result.OK)
                             return;
-                        numbers.Push(numbers.Pop() * numbers.Pop());
+                        d1 = numbers.Pop();
+                        d2 = numbers.Pop();
+                        try
+                        {
+                            numbers.Push(toDecimal((BigInteger)d1 * (BigInteger)d2));
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                         break;
                     case Symbol.Division:
                         actualSymbol = getNextSymbol();
@@ -118,11 +195,19 @@ namespace DDGFinder
                             return;
                         d1 = numbers.Pop();
                         d2 = numbers.Pop();
-                        d2Integer = (int)d2;
-                        if (Math.Abs(d2 - d2Integer) < 0.01M)
+                        d2Integer = (BigInteger)d2;
+                        if (Math.Abs(d2 - (decimal)d2Integer) < 0.01M)
                         {
                             if (d2Integer != 0)
-                                numbers.Push(d1 / d2Integer);
+                            {
+                                try
+                                {
+                                    numbers.Push(toDecimal((BigInteger)d1 / (BigInteger)d2));
+                                } catch (Exception e)
+                                {
+                                    int a = 0;
+                                }
+                            }
                             else
                             {
                                 result = Result.DivisionByZero;
@@ -139,18 +224,18 @@ namespace DDGFinder
                             return;
                         d1 = numbers.Pop();
                         d2 = numbers.Pop();
-                        d2Integer = (int)d2;
-                        if (Math.Abs(d2 - d2Integer) < 0.01M)
+                        d2Integer = (BigInteger)d2;
+                        if (Math.Abs(d2 - (decimal)d2Integer) < 0.01M)
                         {
                             if (d2Integer != 0)
-                                numbers.Push(d1 % d2Integer);
+                                numbers.Push(d1 % d2);
                             else
                             {
                                 result = Result.ModulusOnZero;
                                 return;
                             }
-                        }
-                        numbers.Push(d1 % d2);
+                        } else
+                            numbers.Push(d1 % d2);
                         break;
                     case Symbol.Exponential:
                         actualSymbol = getNextSymbol();
@@ -159,16 +244,21 @@ namespace DDGFinder
                             return;
                         d1 = numbers.Pop();
                         d2 = numbers.Pop();
-                        if (d1 < 0)
-                        {
-                            result = Result.ExponentWrongInputs;
-                            return;
-                        } else if (d1 == 0 && d2 < 0)
+                        if (d1 < 0 || d2 < 0)
                         {
                             result = Result.ExponentWrongInputs;
                             return;
                         }
-                        numbers.Push((decimal)Math.Pow((double)d1, (double)d2));
+                        try
+                        {
+                            if (d2 > 100M)
+                                numbers.Push(decimal.MaxValue);
+                            else
+                                numbers.Push(toDecimal(BigInteger.Pow((BigInteger)d1, toInt((BigInteger)d2))));
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                         break;
                     case Symbol.Logarithm:
                         actualSymbol = getNextSymbol();
@@ -177,16 +267,43 @@ namespace DDGFinder
                             return;
                         d1 = numbers.Pop();
                         d2 = numbers.Pop();
-                        if (d1 < 0 || d2 < 0 || d2 == 1 || (d1 != 1 && d2 == 0))
+                        if (d1 < 0 || d2 < 0 || d2 == 1 || (d1 != 1 && d2 == 0) || (d1 == 0 && (d2 > 1 || (d2 > 0 && d2 < 1))))
                         {
                             result = Result.LogarithmWrongInputs;
                             return;
                         }
-                        numbers.Push((decimal)Math.Log((double)d1, (double)d2));
+                        try
+                        {
+                            numbers.Push(toDecimal(BigInteger.Log(toBigInteger((double)d1), infinityToMaxValue((double)d2))));
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                         break;
                     default: return;
                 }
             }
+        }
+
+        private int toInt(BigInteger input)
+        {
+            if (input > (BigInteger)int.MaxValue)
+                return int.MaxValue;
+            return (int)input;
+        }
+
+        private double infinityToMaxValue(double input)
+        {
+            if (Double.IsInfinity(input))
+                return double.MaxValue;
+            return input;
+        }
+
+        private BigInteger toBigInteger(double input)
+        {
+            if (Double.IsInfinity(input))
+                return (BigInteger)double.MaxValue;
+            return (BigInteger)input;
         }
 
         private void Factor()
