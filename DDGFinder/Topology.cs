@@ -109,6 +109,9 @@ namespace DDGFinder
                         {
                             matrix[x, y] = true;
                             matrix[y, x] = true;
+                        } else if (result != ExpressionInterpreter.Result.OK)
+                        {
+                            int a = 0;
                         }
                     } catch (Exception e)
                     {

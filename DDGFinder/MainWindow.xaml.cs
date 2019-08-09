@@ -37,9 +37,9 @@ namespace DDGFinder
         private ObservableCollection<string> idsValues = new ObservableCollection<string>();
         private ObservableCollection<string> stateOrResultsValues = new ObservableCollection<string>();
         private int numberOfNodesValue = 1;
-        private int minLengthValue = 30;
-        private int maxLengthValue = 32;
-        private static string characters = "xyn+-*/%^L";
+        private static int minLengthValue = 30;
+        private static int maxLengthValue = 32;
+        private static string characters = "xyn+-*/%^L()";
         private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%', '^', 'L' };
         private static char[] numbers_array = new char[] { 'x', 'y', 'n' };
         private static int numbers_array_length = numbers_array.Length;
@@ -324,14 +324,22 @@ namespace DDGFinder
                         newId = id.Remove(posToMutate, 1);
                     else
                         newId = id.Substring(0, posToMutate) + newChar + id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     int a = 0;
                 }
-                if (newId.Contains('1') || newId.Contains('3') || newId.Contains('4') || newId.Contains('5') || newId.Contains('6') || newId.Contains('7') || newId.Contains('8') || newId.Contains('9'))
+            } else if (charToMutate == '←')
+            {
+                if (r.Next(2) == 0)
                 {
-                    int a = 0;
+                    newId = id.Substring(0, posToMutate) +
+                        operators_array[r.Next(operators_array_length)].ToString() +
+                        numbers_array[r.Next(numbers_array_length)].ToString() +
+                        id.Substring(posToMutate, id.Length - posToMutate);
                 }
+                else
+                    newId = id.Remove(posToMutate, 1);
             }
             else if (charToMutate == '(' || charToMutate == ')')
             {
@@ -420,6 +428,8 @@ namespace DDGFinder
 
         private static char randomChar()
         {
+            if (r.Next(maxLengthValue) == 0)
+                return r.Next(2) == 0 ? '(' : ')';
             return characters[r.Next(0, characters.Length - 1)];
         }
 
