@@ -34,16 +34,12 @@ namespace DDGFinder
         private AppState appState = AppState.INITIAL;
         private static readonly Random r = new Random();
         private bool requestedToStopIterating = false;
-        /*private BindableTwoDArray<string> idsValues =
-            new BindableTwoDArray<string>(10, 10);
-        private BindableTwoDArray<string> stateOrResultsValues =
-            new BindableTwoDArray<string>(10, 10);*/
         private ObservableCollection<string> idsValues = new ObservableCollection<string>();
         private ObservableCollection<string> stateOrResultsValues = new ObservableCollection<string>();
         private int numberOfNodesValue = 1;
-        private int minLengthValue = 10;
-        private int maxLengthValue = 20;
-        private static string characters = "xyn+-*/%^L()";
+        private int minLengthValue = 30;
+        private int maxLengthValue = 32;
+        private static string characters = "xyn+-*/%^L";
         private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%', '^', 'L' };
         private static char[] numbers_array = new char[] { 'x', 'y', 'n' };
         private static int numbers_array_length = numbers_array.Length;
@@ -57,7 +53,7 @@ namespace DDGFinder
             { 'y', array_left },
             { 'n', array_left },
             { '+', operators_and_close_parenthesis_array_left },
-            { '-', new char[] { '+', '-', '/', '%', 'L' } },
+            { '-', new char[] { '+', '-', '/', '%', '^', 'L' } },
             { '*', operators_and_close_parenthesis_array_left },
             { '/', operators_and_close_parenthesis_array_left },
             { '%', operators_and_close_parenthesis_array_left },
@@ -149,6 +145,7 @@ namespace DDGFinder
 
         public MainWindow()
         {
+            WindowStartupLocation = WindowStartupLocation.CenterScreen;
             InitializeComponent();
             DataContext = this;
             for (int i = 0; i < 100; i++)
@@ -157,6 +154,7 @@ namespace DDGFinder
                 idsValues.Add(null);
                 stateOrResultsValues.Add(null);
             }
+            NumberOfNodesTextBox.Focus();
         }
 
         private static readonly Regex _regex = new Regex("[^0-9.-]+");
@@ -248,7 +246,7 @@ namespace DDGFinder
         {
             return Task.Run(() => MutateOrCreateRandomIdAndComputeAsync(i, topologies[i - 45].Id));
         }
-
+        
         private void MutateOrCreateRandomIdAndComputeAsync(int i, string idToMutate)
         {
             try {
@@ -257,15 +255,21 @@ namespace DDGFinder
                 while (idNotSetted)
                 {
                     disconnected = true;
+                    bool mutationReturnedDisconnectedGraph = false;
+                    string createdId = "";
+                    topologies[i].resetTimes();
                     while (disconnected)
                     {
-                        string createdId;
                         if (idToMutate == null)
                             createdId = getValidRandomId();
+                        else if (mutationReturnedDisconnectedGraph)
+                           createdId = mutateIdInner(createdId);
                         else
                             createdId = mutateId(idToMutate);
                         topologies[i].setIdAndPopulate(createdId);
                         disconnected = topologies[i].isDisconnected();
+                        if (disconnected)
+                            mutationReturnedDisconnectedGraph = true;
                     }
                     idNotSetted = !setId(i, topologies[i].Id);
                     if (!idNotSetted)
@@ -290,6 +294,8 @@ namespace DDGFinder
             {
                 posToMutate = r.Next(id.Length);
                 charToMutate = id[posToMutate];
+                if (charToMutate == '-' && (posToMutate == 0 || (posToMutate > 0 && (id[posToMutate - 1] == '(' || id[posToMutate - 1] == '*'))))
+                    return id.Remove(posToMutate, 1);
             } catch (Exception e)
             {
                 int a = 0;
@@ -314,8 +320,8 @@ namespace DDGFinder
                     char newChar = charToMutate;
                     while (newChar == charToMutate)
                         newChar = arrayToUse[r.Next(arrayToUseLength)];
-                    if (newChar == '-' && posToMutate == 0)
-                        newId = id.Remove(0, 1);
+                    if (newChar == '-' && (posToMutate == 0 || (posToMutate + 1 < id.Length && id[posToMutate + 1] == '-')))
+                        newId = id.Remove(posToMutate, 1);
                     else
                         newId = id.Substring(0, posToMutate) + newChar + id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
                 } catch (Exception e)
@@ -414,10 +420,6 @@ namespace DDGFinder
 
         private static char randomChar()
         {
-            if (r.Next(32) == 0)
-            {
-                return r.Next(1) == 0 ? '(' : ')';
-            }
             return characters[r.Next(0, characters.Length - 1)];
         }
 

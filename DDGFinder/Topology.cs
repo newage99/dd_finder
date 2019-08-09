@@ -13,6 +13,27 @@ namespace DDGFinder
         public int diameter = 0;
         public int second_puntuation = 0;
         public bool correctly_populated = false;
+        private long mutationTime = 0;
+        private long creationTime = 0;
+        private long calculationTime = 0;
+
+        public long MutationTime
+        {
+            get { return mutationTime; }
+            set { mutationTime = value; }
+        }
+
+        public long CreationTime
+        {
+            get { return creationTime; }
+            set { creationTime = value; }
+        }
+
+        public long CalculationTime
+        {
+            get { return calculationTime; }
+            set { calculationTime = value; }
+        }
 
         public string Id
         {
@@ -39,6 +60,13 @@ namespace DDGFinder
         {
             this.size = size;
             matrix = new bool[size, size];
+        }
+
+        public void resetTimes()
+        {
+            mutationTime = 0;
+            creationTime = 0;
+            calculationTime = 0;
         }
 
         public void setIdAndPopulate(string id)
