@@ -53,7 +53,7 @@ namespace DDGFinder
             { 'y', array_left },
             { 'n', array_left },
             { '+', operators_and_close_parenthesis_array_left },
-            { '-', new char[] { '+', '-', '/', '%', '^', 'L' } },
+            { '-', operators_and_close_parenthesis_array_left },
             { '*', operators_and_close_parenthesis_array_left },
             { '/', operators_and_close_parenthesis_array_left },
             { '%', operators_and_close_parenthesis_array_left },
@@ -427,7 +427,7 @@ namespace DDGFinder
         {
             int length = r.Next(minLengthValue, maxLengthValue);
             char aux = randomChar();
-            while (aux == '+' || aux == '*' || aux == '/' || aux == '%' || aux == '^' || aux == 'L' || aux == ')')
+            while (!numbers_array.Contains(aux))
                 aux = randomChar();
             string result = aux.ToString();
             int parenCounter = aux != '(' ? 0 : 1;
