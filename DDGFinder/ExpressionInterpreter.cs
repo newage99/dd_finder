@@ -18,48 +18,49 @@ namespace DDGFinder
 
         private double Addition(double a, double b)
         {
-            limitDoubles(ref a, ref b);
-            return a + b;
+            limitDoubles(ref a, ref b, bottomResult: 0D);
+            return b + a;
         }
 
         private double Substraction(double a, double b)
         {
-            limitDoubles(ref a, ref b);
-            return a - b;
+            limitDoubles(ref a, ref b, bottomResult: 0D);
+            return b - a;
         }
 
         private double Multiplication(double a, double b)
         {
-            limitDoubles(ref a, ref b);
-            return a * b;
+            limitDoubles(ref a, ref b, bottomResult: 0D);
+            return b * a;
         }
 
         private double Division(double a, double b, out bool incorrect_input)
         {
-            incorrect_input = b == 0D;
-            limitDoubles(ref a, ref b);
-            return a / b;
+            incorrect_input = a == 0D;
+            limitDouble(ref a);
+            limitDouble(ref b, bottomResult: 0D);
+            return b / a;
         }
 
         private double Modulus(double a, double b)
         {
             limitDoubles(ref a, ref b);
-            return a % b;
+            return b % a;
         }
 
         private double Exponential(double a, double b)
         {
-            limitDouble(ref a);
-            limitDouble(ref b, 100D, 0.01D);
-            return Math.Pow(a, b);
+            limitDouble(ref a, 100D, 0.01D);
+            limitDouble(ref b);
+            return Math.Pow(b, a);
         }
 
         private double Logarithm(double a, double b, out bool incorrect_input)
         {
-            incorrect_input = b == 0D;
-            limitDouble(ref a);
-            limitDouble(ref b, 100D, 2D, 100D, 2D);
-            return Math.Log(a, b);
+            incorrect_input = a == 0D;
+            limitDouble(ref a, 100D, 2D, 100D, 2D);
+            limitDouble(ref b);
+            return Math.Log(b, a);
         }
 
         private double Pop()
@@ -85,6 +86,11 @@ namespace DDGFinder
         private void OperationPush(Symbol input)
         {
             operations.Peek().Push(input);
+        }
+
+        private int OperationCount()
+        {
+            return operations.Peek().Count;
         }
 
         private void applyOperation()
@@ -123,6 +129,7 @@ namespace DDGFinder
         public bool Compute(string expression, out Result outResult)
         {
             numbers.Clear();
+            operations.Clear();
             numbers.Push(new Stack<double>());
             operations.Push(new Stack<Symbol>());
             this.expression = expression.Clone().ToString();
@@ -140,21 +147,21 @@ namespace DDGFinder
                     else if (actualSymbol == Symbol.CloseParenthesis)
                     {
                         Stack<double> aa;
-                        Stack<Symbol> bb;
                         try
                         {
                             aa = numbers.Pop();
-                            bb = operations.Pop();
-                            if (Count() > 1 || aa.Count > 1 || bb.Count > 1)
+                            operations.Pop();
+                            if (Count() > 1 || aa.Count > 1)
                             {
                                 int a = 0;
                             }
-                            Push(aa.Pop());
-                            OperationPush(bb.Pop());
-                            applyOperation();
-                            if (result != Result.OK)
+                            double aux = aa.Pop();
+                            Push(aux);
+                            if (OperationCount() > 0)
+                                OperationPush(OperationPop());
+                            if (Count() > 1)
                             {
-                                int a = 0;
+                                applyOperation();
                             }
                         } catch (Exception e)
                         {
@@ -164,19 +171,17 @@ namespace DDGFinder
                     else if (actualSymbol != Symbol.Number)
                         OperationPush(actualSymbol);
                     else if (Count() > 1)
-                    {
                         applyOperation();
-                    }
                     actualSymbol = getNextSymbol();
                 }
             } catch (Exception e)
             {
                 int a = 0;
             }
-            if (result == Result.OK && (numbers.Count != 1 || numbers.Peek().Count != 1))
+            if (result == Result.OK && (numbers.Count != 1 || Count() != 1))
                 result = Result.NumberStackWrongElements;
             outResult = result;
-            if (numbers.Count <= 0)
+            if (outResult != Result.OK)
                 return false;
             return Pop() > 0D ? true : false;
         }
@@ -239,10 +244,10 @@ namespace DDGFinder
                 input = -bottomResult;
         }
 
-        private void limitDoubles(ref double a, ref double b)
+        private void limitDoubles(ref double a, ref double b, double bottomResult = 0.00000000001D)
         {
-            limitDouble(ref a);
-            limitDouble(ref b);
+            limitDouble(ref a, bottomResult: bottomResult);
+            limitDouble(ref b, bottomResult: bottomResult);
         }
     }
 }

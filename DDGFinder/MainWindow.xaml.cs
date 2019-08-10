@@ -329,17 +329,6 @@ namespace DDGFinder
                 {
                     int a = 0;
                 }
-            } else if (charToMutate == '←')
-            {
-                if (r.Next(2) == 0)
-                {
-                    newId = id.Substring(0, posToMutate) +
-                        operators_array[r.Next(operators_array_length)].ToString() +
-                        numbers_array[r.Next(numbers_array_length)].ToString() +
-                        id.Substring(posToMutate, id.Length - posToMutate);
-                }
-                else
-                    newId = id.Remove(posToMutate, 1);
             }
             else if (charToMutate == '(' || charToMutate == ')')
             {
@@ -367,19 +356,38 @@ namespace DDGFinder
                     try
                     {
                         newId = id.Substring(0, posToMutate);
+                        bool directionToRemoveChar = true;
                         if (charToMutate == '(')
                         {
                             newId += numbers_array[r.Next(numbers_array_length)];
                             if (posToMutate < id.Length - 1 && id[posToMutate + 1] != '-')
                                 newId += operators_array[r.Next(operators_array_length)];
+                            directionToRemoveChar = false;
                         } else
                             newId += operators_array[r.Next(operators_array_length)].ToString() + numbers_array[r.Next(numbers_array_length)].ToString();
                         newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
+                        newId = removeRandomParenthesisChar(newId, posToMutate, directionToRemoveChar);
                     }
                     catch (Exception e)
                     {
                         int a = 0;
                     }
+                }
+                int parCounter = 0;
+                for (int i = 0; i < newId.Length; i++)
+                {
+                    if (newId[i] == '(')
+                        parCounter++;
+                    else if (newId[i] == ')')
+                        parCounter--;
+                    if (parCounter < 0)
+                    {
+                        int a = 0;
+                    }
+                }
+                if (parCounter != 0)
+                {
+                    int a = 0;
                 }
             }
             else
@@ -387,6 +395,31 @@ namespace DDGFinder
                 int a = 0;
             }
             return newId;
+        }
+
+        private string removeRandomParenthesisChar(string value, int startingPos, bool directionTrueLeftFalseRight)
+        {
+            List<int> positions = new List<int>();
+            int length = value.Length;
+            int additionOrSubstraction = directionTrueLeftFalseRight ? -1 : 1;
+            startingPos += additionOrSubstraction;
+            char charToRemove = directionTrueLeftFalseRight ? '(' : ')';
+            char charThatIndicatesUsThatWeHaveToExitFor = directionTrueLeftFalseRight ? ')' : '(';
+            bool positionsNotEmpty = false;
+            for (int i = startingPos; directionTrueLeftFalseRight ? i > 0 : i < length; i += additionOrSubstraction)
+            {
+                if (value[i] == charToRemove)
+                {
+                    positions.Add(i);
+                    positionsNotEmpty = true;
+                }
+                else if (value[i] == charThatIndicatesUsThatWeHaveToExitFor && positionsNotEmpty)
+                    break;
+            }
+            int count = positions.Count;
+            if (count > 0)
+                value = value.Remove(positions[r.Next(count)], 1);
+            return value;
         }
 
         private string mutateId(string id)
