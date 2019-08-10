@@ -13,7 +13,7 @@ namespace DDGFinder
         static Regex regexNumber = new Regex(@"^\d+([,\.]\d+)?");
         //Stack<double> numbers = new Stack<double>();
         Stack<Stack<double>> numbers = new Stack<Stack<double>>();
-        Stack<Symbol> operations = new Stack<Symbol>();
+        Stack<Stack<Symbol>> operations = new Stack<Stack<Symbol>>();
         Result result = Result.OK;
 
         private double Addition(double a, double b)
@@ -34,8 +34,9 @@ namespace DDGFinder
             return a * b;
         }
 
-        private double Division(double a, double b)
+        private double Division(double a, double b, out bool incorrect_input)
         {
+            incorrect_input = b == 0D;
             limitDoubles(ref a, ref b);
             return a / b;
         }
@@ -53,8 +54,9 @@ namespace DDGFinder
             return Math.Pow(a, b);
         }
 
-        private double Logarithm(double a, double b)
+        private double Logarithm(double a, double b, out bool incorrect_input)
         {
+            incorrect_input = b == 0D;
             limitDouble(ref a);
             limitDouble(ref b, 100D, 2D, 100D, 2D);
             return Math.Log(a, b);
@@ -75,52 +77,95 @@ namespace DDGFinder
             return numbers.Peek().Count;
         }
 
-        public bool Compute(string expression, out Result result)
+        private Symbol OperationPop()
+        {
+            return operations.Peek().Pop();
+        }
+
+        private void OperationPush(Symbol input)
+        {
+            operations.Peek().Push(input);
+        }
+
+        private void applyOperation()
+        {
+            if (operations.Count <= 0)
+                return;
+            if (Count() > 1)
+            {
+                Symbol operation = OperationPop();
+                if (operation == Symbol.Addition)
+                    Push(Addition(Pop(), Pop()));
+                else if (operation == Symbol.Substraction)
+                    Push(Substraction(Pop(), Pop()));
+                else if (operation == Symbol.Multiplication)
+                    Push(Multiplication(Pop(), Pop()));
+                else if (operation == Symbol.Division)
+                {
+                    Push(Division(Pop(), Pop(), out bool incorrect_input));
+                    if (incorrect_input)
+                        result = Result.DivisionByZero;
+                }
+                else if (operation == Symbol.Modulus)
+                    Push(Modulus(Pop(), Pop()));
+                else if (operation == Symbol.Exponential)
+                    Push(Exponential(Pop(), Pop()));
+                else if (operation == Symbol.Logarithm)
+                {
+                    Push(Logarithm(Pop(), Pop(), out bool incorrect_input));
+                    if (incorrect_input)
+                        result = Result.LogarithmWrongInputs;
+                }
+            } else
+                result = Result.NumberStackWrongElements;
+        }
+
+        public bool Compute(string expression, out Result outResult)
         {
             numbers.Clear();
+            numbers.Push(new Stack<double>());
+            operations.Push(new Stack<Symbol>());
             this.expression = expression.Clone().ToString();
             pos = 0;
             try
             {
                 actualSymbol = getNextSymbol();
-                while (actualSymbol != Symbol.ExpressionEnd)
+                while (actualSymbol != Symbol.ExpressionEnd && result == Result.OK)
                 {
                     if (actualSymbol == Symbol.OpenParenthesis)
                     {
                         numbers.Push(new Stack<double>());
+                        operations.Push(new Stack<Symbol>());
                     }
-                    else if (actualSymbol != Symbol.Number && actualSymbol != Symbol.CloseParenthesis)
-                        operations.Push(actualSymbol);
-                    else if (Count() > 1)
+                    else if (actualSymbol == Symbol.CloseParenthesis)
                     {
-                        if (actualSymbol == Symbol.CloseParenthesis)
+                        Stack<double> aa;
+                        Stack<Symbol> bb;
+                        try
                         {
-                            Stack<double> aa = numbers.Pop();
-                            if (Count() != 1)
+                            aa = numbers.Pop();
+                            bb = operations.Pop();
+                            if (Count() > 1 || aa.Count > 1 || bb.Count > 1)
                             {
                                 int a = 0;
                             }
                             Push(aa.Pop());
+                            OperationPush(bb.Pop());
+                            applyOperation();
+                            if (result != Result.OK)
+                            {
+                                int a = 0;
+                            }
+                        } catch (Exception e)
+                        {
+                            int a = 0;
                         }
-                        Symbol operation = operations.Pop();
-                        if (operation == Symbol.Addition)
-                            Push(Addition(Pop(), Pop()));
-                        else if (operation == Symbol.Substraction)
-                            Push(Substraction(Pop(), Pop()));
-                        else if (operation == Symbol.Multiplication)
-                            Push(Multiplication(Pop(), Pop()));
-                        else if (operation == Symbol.Division)
-                            Push(Division(Pop(), Pop()));
-                        else if (operation == Symbol.Modulus)
-                            Push(Modulus(Pop(), Pop()));
-                        else if (operation == Symbol.Exponential)
-                            Push(Exponential(Pop(), Pop()));
-                        else if (operation == Symbol.Logarithm)
-                            Push(Logarithm(Pop(), Pop()));
                     }
-                    else
+                    else if (actualSymbol != Symbol.Number)
+                        OperationPush(actualSymbol);
+                    else if (Count() > 1)
                     {
-                        int a = 0;
+                        applyOperation();
                     }
                     actualSymbol = getNextSymbol();
                 }
@@ -128,13 +173,12 @@ namespace DDGFinder
             {
                 int a = 0;
             }
-            if (numbers.Count != 1 || numbers.Peek().Count != 1)
+            if (result == Result.OK && (numbers.Count != 1 || numbers.Peek().Count != 1))
                 result = Result.NumberStackWrongElements;
-            else
-                result = this.result;
+            outResult = result;
             if (numbers.Count <= 0)
                 return false;
-            return Math.Round(Pop()) > 0D ? true : false;
+            return Pop() > 0D ? true : false;
         }
 
         private Symbol getNextSymbol()
