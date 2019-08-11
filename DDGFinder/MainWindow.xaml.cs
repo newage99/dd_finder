@@ -307,20 +307,56 @@ namespace DDGFinder
                 try
                 {
                     bool trueNumberFalseOperation = numbers_array.Contains(charToMutate);
-                    if (allowedToInsertOpenOrCloseParenthesis(id, posToMutate, trueNumberFalseOperation) &&
-                        r.Next(Math.Abs(((maxLengthValue + minLengthValue) / 2) - id.Length) * 3) == 0)
+                    bool allowedToInsertOpen = allowedToInsertOpenParenthesisAtLeft(id, posToMutate, trueNumberFalseOperation);
+                    bool allowedToInsertClose = allowedToInsertCloseParenthesisAtRight(id, posToMutate, trueNumberFalseOperation);
+                    int idLengthAverage = (maxLengthValue + minLengthValue) / 2;
+                    int probToInsertParenthesis = (Math.Abs((idLengthAverage) - id.Length) * 2) + idLengthAverage;
+                    if ((allowedToInsertOpen || allowedToInsertClose) && r.Next(probToInsertParenthesis) == 0)
                     {
-                        if (r.Next(2) == 0)
-                        {
-                            // TODO: Insert Open Parenthesis at valid position
-
-                        }
+                        if (!allowedToInsertClose)
+                            newId = insertCloseParenthesis(id, posToMutate, trueNumberFalseOperation);
+                        else if (!allowedToInsertOpen)
+                            newId = insertOpenParenthesis(id, posToMutate, trueNumberFalseOperation);
+                        else if (r.Next(2) == 0)
+                            newId = insertOpenParenthesis(id, posToMutate, trueNumberFalseOperation);
                         else
-                        {
-                            // TODO: Insert Close Parenthesis at valid position
-
-                        }
+                            newId = insertCloseParenthesis(id, posToMutate, trueNumberFalseOperation);
                         checkNewIdHasCorrectParenthesis(newId);
+                    } else if (posToMutate > 0 && id.Length > maxLengthValue + 6 && (id[posToMutate - 1] != ')' || id[posToMutate + 1] != '('))
+                    {
+                        try
+                        {
+                            if (numbers_and_operators_array.Contains(id[posToMutate - 1]))
+                                newId = id.Remove(posToMutate - 1, 2);
+                            else if (numbers_and_operators_array.Contains(id[posToMutate + 1]))
+                                newId = id.Remove(posToMutate, 2);
+                            else
+                            {
+                                int a = 0;
+                            }
+                            bool founded = true;
+                            while (founded)
+                            {
+                                founded = false;
+                                int positionOfTheLastOpenParenthesis = -1;
+                                int length = newId.Length;
+                                for (int i = 0; i < length; i++)
+                                {
+                                    if (newId[i] == '(')
+                                        positionOfTheLastOpenParenthesis = i;
+                                    else if (newId[i] == ')' && i - 2 == positionOfTheLastOpenParenthesis)
+                                    {
+                                        newId = newId.Remove(positionOfTheLastOpenParenthesis + 2, 1);
+                                        newId = newId.Remove(positionOfTheLastOpenParenthesis, 1);
+                                        founded = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        } catch (Exception e)
+                        {
+                            int a = 0;
+                        }
                     } else
                     {
                         char[] arrayToUse;
@@ -396,6 +432,94 @@ namespace DDGFinder
             {
                 int a = 0;
             }
+            int lastTimeOpenParen = 0;
+            for (int i = 0; i < newId.Length; i++)
+            {
+                lastTimeOpenParen++;
+                if (newId[i] == '(')
+                    lastTimeOpenParen = 0;
+                else if (newId[i] == ')' && lastTimeOpenParen <= 3)
+                {
+                    int a = 0;
+                }
+            }
+            return newId;
+        }
+
+        private string insertOpenParenthesis(string value, int startingPos, bool trueNumberFalseOperation)
+        {
+            int offset = 1;
+            if (trueNumberFalseOperation)
+                offset--;
+            string newId = value.Insert(startingPos + offset, "(");
+            List<int> positions = new List<int>();
+            int length = newId.Length;
+            int init = startingPos + offset + 1;
+            for (int i = init; i < length; i++)
+            {
+                if (newId[i] == '(')
+                    break;
+                else if (i > init + 1 && operators_array.Contains(newId[i]) || newId[i] == ')')
+                    positions.Add(i);
+            }
+            int count = positions.Count;
+            if (count > 0)
+            {
+                int pos = positions[r.Next(count)];
+                newId = newId.Insert(pos, ")");
+            }
+            else if (startingPos + (trueNumberFalseOperation ? 4 : 5) == newId.Length)
+                newId += ")";
+            else
+            {
+                int a = 0;
+            }
+            int lastTimeOpenParen = 0;
+            for (int i = 0; i < newId.Length; i++)
+            {
+                lastTimeOpenParen++;
+                if (newId[i] == '(')
+                    lastTimeOpenParen = 0;
+                else if (newId[i] == ')' && lastTimeOpenParen <= 3)
+                {
+                    int a = 0;
+                }
+            }
+            return newId;
+        }
+
+        private string insertCloseParenthesis(string value, int startingPos, bool trueNumberFalseOperation)
+        {
+            int offset = 0;
+            if (trueNumberFalseOperation)
+                offset++;
+            string newId = value.Insert(startingPos + offset, ")");
+            List<int> positions = new List<int>();
+            for (int i = startingPos - 2; i > 0; i--)
+            {
+                if (newId[i] == ')')
+                    break;
+                else if (numbers_array.Contains(newId[i]) || newId[i] == '(')
+                    positions.Add(i);
+            }
+            int count = positions.Count;
+            if (count > 0)
+                newId = newId.Insert(positions[r.Next(count)], "(");
+            else
+            {
+                int a = 0;
+            }
+            int lastTimeOpenParen = 0;
+            for (int i = 0; i < newId.Length; i++)
+            {
+                lastTimeOpenParen++;
+                if (newId[i] == '(')
+                    lastTimeOpenParen = 0;
+                else if (newId[i] == ')' && lastTimeOpenParen <= 3)
+                {
+                    int a = 0;
+                }
+            }
             return newId;
         }
 
@@ -407,7 +531,9 @@ namespace DDGFinder
                 if (newId[i] == '(')
                     parCounter++;
                 else if (newId[i] == ')')
+                {
                     parCounter--;
+                }
                 if (parCounter < 0)
                 {
                     int a = 0;
@@ -417,12 +543,6 @@ namespace DDGFinder
             {
                 int a = 0;
             }
-        }
-
-        private bool allowedToInsertOpenOrCloseParenthesis(string value, int startingPos, bool trueNumberFalseOperation)
-        {
-            return allowedToInsertOpenParenthesisAtLeft(value, startingPos, trueNumberFalseOperation) ||
-                allowedToInsertCloseParenthesisAtRight(value, startingPos, trueNumberFalseOperation);
         }
 
         private bool allowedToInsertOpenParenthesisAtLeft(string value, int startingPos, bool trueNumberFalseOperation)
@@ -435,7 +555,7 @@ namespace DDGFinder
             int end = startingPos - threshold;
             for (int i = startingPos - 1; i >= end; i--)
             {
-                if (value[i] == ')')
+                if (value[i] == ')' || value[i] == '(')
                     return false;
             }
             return true;
@@ -451,7 +571,7 @@ namespace DDGFinder
             int end = startingPos + threshold;
             for (int i = startingPos + 1; i <= end; i++)
             {
-                if (value[i] == '(')
+                if (value[i] == '(' || value[i] == ')')
                     return false;
             }
             return true;
@@ -466,7 +586,7 @@ namespace DDGFinder
             char charToRemove = directionTrueLeftFalseRight ? '(' : ')';
             char charThatIndicatesUsThatWeHaveToExitFor = directionTrueLeftFalseRight ? ')' : '(';
             bool positionsNotEmpty = false;
-            for (int i = startingPos; directionTrueLeftFalseRight ? i > 0 : i < length; i += additionOrSubstraction)
+            for (int i = startingPos; directionTrueLeftFalseRight ? i >= 0 : i < length; i += additionOrSubstraction)
             {
                 if (value[i] == charToRemove)
                 {
@@ -479,6 +599,10 @@ namespace DDGFinder
             int count = positions.Count;
             if (count > 0)
                 value = value.Remove(positions[r.Next(count)], 1);
+            else
+            {
+                int a = 0;
+            }
             return value;
         }
 
