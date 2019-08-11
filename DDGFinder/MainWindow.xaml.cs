@@ -80,6 +80,7 @@ namespace DDGFinder
         private int iterationsToDoValue = 1;
         private int leftIterations = 0;
         private int amountOfEqualFirstsSecondPuntuations = 1;
+        private int numberOfTopologiesToMutate = 48;
 
         public string IterationsToDo
         {
@@ -88,6 +89,20 @@ namespace DDGFinder
                 bool isNumeric = int.TryParse(value, out int n);
                 if (isNumeric && n > 0)
                     iterationsToDoValue = n;
+            }
+        }
+        private List<double> iterationTimeAvgValues = new List<double>();
+        public string IterationTimeAvg
+        {
+            get
+            {
+                int count = iterationTimeAvgValues.Count;
+                double all = 0D;
+                for (int i = 0; i < count; i++)
+                {
+                    all += iterationTimeAvgValues[i];
+                }
+                return (all / count).ToString();
             }
         }
         public string NumberOfIterations
@@ -230,24 +245,78 @@ namespace DDGFinder
             List<Task> tasks = new List<Task>();
             while (leftIterations > 0)
             {
+                DateTime dateTimeInit = DateTime.Now;
                 tasks.Clear();
-                for (int i = 48; i < 96; i++)
-                    tasks.Add(MutateIdAndCompute(i));
-                for (int i = 96; i < 100; i++)
+                int end = numberOfTopologiesToMutate * 2;
+                int mutationsPerThread = 1;
+                for (int i = numberOfTopologiesToMutate; i < end; i+= mutationsPerThread)
+                    tasks.Add(MutateIdsAndCompute(i, mutationsPerThread));
+                for (int i = end; i < 100; i++)
                     tasks.Add(CreateRandomIdAndCompute(i));
                 Task.WaitAll(tasks.ToArray());
                 orderTopologiesByPuntuation();
                 leftIterations -= 1;
                 SetField(ref numberOfIterationsValue, numberOfIterationsValue + 1, "NumberOfIterations");
+                TimeSpan timeSpan = DateTime.Now - dateTimeInit;
+                iterationTimeAvgValues.Add(timeSpan.TotalMilliseconds);
+                OnPropertyChanged("IterationTimeAvg");
             }
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
         }
 
+        private Task MutateIdsAndCompute(int i, int numberOfMutations)
+        {
+            return Task.Run(() => MutateRandomIdsAndComputeAsync(i, numberOfMutations));
+        }
+
         private Task MutateIdAndCompute(int i)
         {
-            return Task.Run(() => MutateOrCreateRandomIdAndComputeAsync(i, topologies[i - 45].Id));
+            return Task.Run(() => MutateOrCreateRandomIdAndComputeAsync(i, topologies[i - numberOfTopologiesToMutate].Id));
         }
         
+        private void MutateRandomIdsAndComputeAsync(int j, int numberOfMutations)
+        {
+            int end = j + numberOfMutations;
+            for (int i = j; i < end; i++)
+            {
+                try
+                {
+                    string idToMutate = topologies[i - numberOfTopologiesToMutate].Id;
+                    string oldId = topologies[i].Id;
+                    bool idNotSetted = true;
+                    DateTime init = DateTime.Now;
+                    int tries = 0;
+                    while (idNotSetted)
+                    {
+                        string createdId = mutateId(idToMutate);
+                        topologies[i].setIdAndPopulate(createdId);
+                        if (!topologies[i].isDisconnected())
+                        {
+                            idNotSetted = !setId(i, topologies[i].Id);
+                            if (!idNotSetted)
+                            {
+                                stateOrResultsValues[i] = "Waiting to start";
+                                topologies[i].calculateDD();
+                                stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
+                            }
+                        }
+                        else
+                        {
+                            idNotSetted = false;
+                            topologies[i].Id = oldId;
+                        }
+                        tries++;
+                    }
+                    topologies[i].tries = tries;
+                    topologies[i].populateAndIdSettedTime = Math.Round((DateTime.Now - init).TotalMilliseconds);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("CreateRandomIdAndComputeAsync: " + e.ToString());
+                }
+            }
+        }
+
         private void MutateOrCreateRandomIdAndComputeAsync(int i, string idToMutate)
         {
             try {
@@ -258,7 +327,8 @@ namespace DDGFinder
                     disconnected = true;
                     bool mutationReturnedDisconnectedGraph = false;
                     string createdId = "";
-                    topologies[i].resetTimes();
+                    DateTime init = DateTime.Now;
+                    int tries = 0;
                     while (disconnected)
                     {
                         if (idToMutate == null)
@@ -271,7 +341,10 @@ namespace DDGFinder
                         disconnected = topologies[i].isDisconnected();
                         if (disconnected)
                             mutationReturnedDisconnectedGraph = true;
+                        tries++;
                     }
+                    topologies[i].tries = tries;
+                    topologies[i].populateAndIdSettedTime = Math.Round((DateTime.Now - init).TotalMilliseconds);
                     idNotSetted = !setId(i, topologies[i].Id);
                     if (!idNotSetted)
                     {

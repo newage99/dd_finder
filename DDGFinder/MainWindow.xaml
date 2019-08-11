@@ -28,6 +28,8 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -41,11 +43,13 @@
             <TextBox Grid.Column="4" VerticalAlignment="Center" Height="22" Margin="6,0,0,0" PreviewTextInput="TextBox_PreviewTextInput"
                      IsEnabled="{Binding StateNotLoadingOrDoingIterations}" Text="{Binding MaxLength}"></TextBox>
             <Button Grid.Column="5" Height="22" Width="30" Margin="6,0,6,0" Click="Init_Click" >Init</Button>
-            <Label Grid.Column="6" VerticalAlignment="Center">Nº iterations:</Label>
-            <Label Grid.Column="7" VerticalAlignment="Center" Content="{Binding NumberOfIterations}"></Label>
-            <TextBox Grid.Column="8" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput" Text="{Binding IterationsToDo}" IsEnabled="{Binding StateIsIdle}"></TextBox>
-            <Button Grid.Column="9" Height="22" Width="80" Margin="10,0,6,0" IsEnabled="{Binding StateIsIdle}" Click="DoIterations_Click">Do iterations</Button>
-            <Button Grid.Column="10" Height="22" Width="34" Margin="0,0,10,0" IsEnabled="{Binding StopIteratingIsEnabled}">Stop</Button>
+            <Label Grid.Column="6" VerticalAlignment="Center">Iteration Time Avg:</Label>
+            <Label Grid.Column="7" VerticalAlignment="Center" Content="{Binding IterationTimeAvg}"></Label>
+            <Label Grid.Column="8" VerticalAlignment="Center">Nº iterations:</Label>
+            <Label Grid.Column="9" VerticalAlignment="Center" Content="{Binding NumberOfIterations}"></Label>
+            <TextBox Grid.Column="10" VerticalAlignment="Center" Height="22" PreviewTextInput="TextBox_PreviewTextInput" Text="{Binding IterationsToDo}" IsEnabled="{Binding StateIsIdle}"></TextBox>
+            <Button Grid.Column="11" Height="22" Width="80" Margin="10,0,6,0" IsEnabled="{Binding StateIsIdle}" Click="DoIterations_Click">Do iterations</Button>
+            <Button Grid.Column="12" Height="22" Width="34" Margin="0,0,10,0" IsEnabled="{Binding StopIteratingIsEnabled}">Stop</Button>
         </Grid>
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
