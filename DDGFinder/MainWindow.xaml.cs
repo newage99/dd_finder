@@ -35,19 +35,20 @@ namespace DDGFinder
         private static readonly Random r = new Random();
         private bool requestedToStopIterating = false;
         private ObservableCollection<string> idsValues = new ObservableCollection<string>();
+        private string[] idsValuesAux = new string[100];
         private ObservableCollection<string> stateOrResultsValues = new ObservableCollection<string>();
         private int numberOfNodesValue = 1;
         private static int minLengthValue = 30;
         private static int maxLengthValue = 32;
-        private static string characters = "xyn+-*/%^L()";
-        private static char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%', '^', 'L' };
-        private static char[] numbers_array = new char[] { 'x', 'y', 'n' };
-        private static int numbers_array_length = numbers_array.Length;
-        private static char[] operators_array = new char[] { '+', '-', '*', '/', '%', '^', 'L' };
-        private static int operators_array_length = operators_array.Length;
-        private static char[] array_left = new char[] { 'x', 'y', 'n', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-        private static char[] operators_and_close_parenthesis_array_left = new char[] { '+', '-', '*', '/', '%', '^', 'L', '(' };
-        private static Dictionary<char, char[]> forbidden_left_chars = new Dictionary<char, char[]>()
+        private static readonly string characters = "xyn+-*/%^L()";
+        private static readonly char[] numbers_and_operators_array = new char[] { 'x', 'y', 'n', '2', '+', '-', '*', '/', '%', '^', 'L' };
+        private static readonly char[] numbers_array = new char[] { 'x', 'y', 'n' };
+        private static readonly int numbers_array_length = numbers_array.Length;
+        private static readonly char[] operators_array = new char[] { '+', '-', '*', '/', '%', '^', 'L' };
+        private static readonly int operators_array_length = operators_array.Length;
+        private static readonly char[] array_left = new char[] { 'x', 'y', 'n', ')', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        private static readonly char[] operators_and_close_parenthesis_array_left = new char[] { '+', '-', '*', '/', '%', '^', 'L', '(' };
+        private static readonly Dictionary<char, char[]> forbidden_left_chars = new Dictionary<char, char[]>()
         {
             { 'x', array_left },
             { 'y', array_left },
@@ -75,7 +76,7 @@ namespace DDGFinder
         private static int MUTATION_ADD_LEFT = 0;
         private static int MUTATION_ADD_RIGHT = 1;
         private static int MUTATION_DELETE = 2;
-        private ObservableCollection<Topology> topologies = new ObservableCollection<Topology>();
+        private static volatile ObservableCollection<Topology> topologies = new ObservableCollection<Topology>();
         private int numberOfIterationsValue = 0;
         private int iterationsToDoValue = 1;
         private int leftIterations = 0;
@@ -91,19 +92,11 @@ namespace DDGFinder
                     iterationsToDoValue = n;
             }
         }
-        private List<double> iterationTimeAvgValues = new List<double>();
+        private double iterationTimeAvgValue = 0D;
         public string IterationTimeAvg
         {
             get
-            {
-                int count = iterationTimeAvgValues.Count;
-                double all = 0D;
-                for (int i = 0; i < count; i++)
-                {
-                    all += iterationTimeAvgValues[i];
-                }
-                return (all / count).ToString();
-            }
+            { return iterationTimeAvgValue.ToString(); }
         }
         public string NumberOfIterations
         {
@@ -193,13 +186,13 @@ namespace DDGFinder
 
         private async void Init()
         {
+            idsValues.CopyTo(idsValuesAux, 0);
             List<Task> tasks = new List<Task>();
             for (int i = 0; i < 100; i++)
             {
                 tasks.Add(InitTopology(i));
             }
             Task.WaitAll(tasks.ToArray());
-            OnPropertyChanged("Ids");
             orderTopologiesByPuntuation();
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
             SetField(ref numberOfIterationsValue, 0, "NumberOfIterations");
@@ -224,12 +217,17 @@ namespace DDGFinder
             {
                 for (int i = 0; i < 100; i++)
                 {
-                    if (idsValues[i].Equals(id))
+                    if (idsValuesAux[i] != null && idsValuesAux[i].Equals(id))
                         return false;
                 }
-                idsValues[pos] = id;
+                idsValuesAux[pos] = id;
             }
             return true;
+        }
+
+        private static int Next(int max)
+        {
+            lock (r) return r.Next(max);
         }
 
         private void DoIterations_Click(object sender, RoutedEventArgs e)
@@ -249,16 +247,24 @@ namespace DDGFinder
                 tasks.Clear();
                 int end = numberOfTopologiesToMutate * 2;
                 int mutationsPerThread = 1;
+                idsValues.CopyTo(idsValuesAux, 0);
                 for (int i = numberOfTopologiesToMutate; i < end; i+= mutationsPerThread)
                     tasks.Add(MutateIdsAndCompute(i, mutationsPerThread));
                 for (int i = end; i < 100; i++)
                     tasks.Add(CreateRandomIdAndCompute(i));
                 Task.WaitAll(tasks.ToArray());
-                orderTopologiesByPuntuation();
+                orderTopologiesByPuntuation();                
                 leftIterations -= 1;
                 SetField(ref numberOfIterationsValue, numberOfIterationsValue + 1, "NumberOfIterations");
                 TimeSpan timeSpan = DateTime.Now - dateTimeInit;
-                iterationTimeAvgValues.Add(timeSpan.TotalMilliseconds);
+                if (numberOfIterationsValue > 1)
+                {
+                    iterationTimeAvgValue = ((iterationTimeAvgValue * (numberOfIterationsValue - 1)) / numberOfIterationsValue) + (timeSpan.TotalMilliseconds / numberOfIterationsValue);
+                }
+                else
+                    iterationTimeAvgValue = (timeSpan.TotalMilliseconds / numberOfIterationsValue);
+
+
                 OnPropertyChanged("IterationTimeAvg");
             }
             SetField(ref appState, AppState.IDLE, "StateIsIdle");
@@ -288,16 +294,16 @@ namespace DDGFinder
                     int tries = 0;
                     while (idNotSetted)
                     {
-                        string createdId = mutateId(idToMutate);
+                        string createdId = mutateId(idToMutate, j);
                         topologies[i].setIdAndPopulate(createdId);
                         if (!topologies[i].isDisconnected())
                         {
                             idNotSetted = !setId(i, topologies[i].Id);
                             if (!idNotSetted)
                             {
-                                stateOrResultsValues[i] = "Waiting to start";
+                                //stateOrResultsValues[i] = "Waiting to start";
                                 topologies[i].calculateDD();
-                                stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
+                                //stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
                             }
                         }
                         else
@@ -334,9 +340,9 @@ namespace DDGFinder
                         if (idToMutate == null)
                             createdId = getValidRandomId();
                         else if (mutationReturnedDisconnectedGraph)
-                           createdId = mutateIdInner(createdId);
+                           createdId = mutateIdInner(createdId, i);
                         else
-                            createdId = mutateId(idToMutate);
+                            createdId = mutateId(idToMutate, i);
                         topologies[i].setIdAndPopulate(createdId);
                         disconnected = topologies[i].isDisconnected();
                         if (disconnected)
@@ -348,9 +354,9 @@ namespace DDGFinder
                     idNotSetted = !setId(i, topologies[i].Id);
                     if (!idNotSetted)
                     {
-                        stateOrResultsValues[i] = "Waiting to start";
+                        //stateOrResultsValues[i] = "Waiting to start";
                         topologies[i].calculateDD();
-                        stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
+                        //stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
                     }
                 }
             }
@@ -360,13 +366,13 @@ namespace DDGFinder
             }
         }
 
-        private string mutateIdInner(string id)
+        private string mutateIdInner(string id, int j)
         {
             int posToMutate = 0;
             char charToMutate = ' ';
             try
             {
-                posToMutate = r.Next(id.Length);
+                posToMutate = Next(id.Length);
                 charToMutate = id[posToMutate];
                 if (charToMutate == '-' && (posToMutate == 0 || (posToMutate > 0 && (id[posToMutate - 1] == '(' || id[posToMutate - 1] == '*'))))
                     return id.Remove(posToMutate, 1);
@@ -384,13 +390,13 @@ namespace DDGFinder
                     bool allowedToInsertClose = allowedToInsertCloseParenthesisAtRight(id, posToMutate, trueNumberFalseOperation);
                     int idLengthAverage = (maxLengthValue + minLengthValue) / 2;
                     int probToInsertParenthesis = (Math.Abs((idLengthAverage) - id.Length) * 2) + idLengthAverage;
-                    if ((allowedToInsertOpen || allowedToInsertClose) && r.Next(probToInsertParenthesis) == 0)
+                    if ((allowedToInsertOpen || allowedToInsertClose) && Next(probToInsertParenthesis) == 0)
                     {
                         if (!allowedToInsertClose)
                             newId = insertCloseParenthesis(id, posToMutate, trueNumberFalseOperation);
                         else if (!allowedToInsertOpen)
                             newId = insertOpenParenthesis(id, posToMutate, trueNumberFalseOperation);
-                        else if (r.Next(2) == 0)
+                        else if (Next(2) == 0)
                             newId = insertOpenParenthesis(id, posToMutate, trueNumberFalseOperation);
                         else
                             newId = insertCloseParenthesis(id, posToMutate, trueNumberFalseOperation);
@@ -446,7 +452,8 @@ namespace DDGFinder
                         }
                         char newChar = charToMutate;
                         while (newChar == charToMutate)
-                            newChar = arrayToUse[r.Next(arrayToUseLength)];
+                            newChar = arrayToUse[Next(arrayToUseLength)];
+
                         if (newChar == '-' && (posToMutate == 0 || (posToMutate + 1 < id.Length && id[posToMutate + 1] == '-')))
                             newId = id.Remove(posToMutate, 1);
                         else
@@ -460,7 +467,7 @@ namespace DDGFinder
             }
             else if (charToMutate == '(' || charToMutate == ')')
             {
-                int option = r.Next(4);
+                int option = Next(4);
                 if (option < 2)
                 {
                     try
@@ -468,9 +475,9 @@ namespace DDGFinder
                         int offset = option == MUTATION_ADD_RIGHT ? 1 : 0;
                         newId = id.Substring(0, posToMutate + offset);
                         if (charToMutate == '(')
-                            newId += numbers_array[r.Next(numbers_array_length)].ToString() + operators_array[r.Next(operators_array_length)].ToString();
+                            newId += numbers_array[Next(numbers_array_length)].ToString() + operators_array[Next(operators_array_length)].ToString();
                         else
-                            newId += operators_array[r.Next(operators_array_length)].ToString() + numbers_array[r.Next(numbers_array_length)].ToString();
+                            newId += operators_array[Next(operators_array_length)].ToString() + numbers_array[Next(numbers_array_length)].ToString();
                         newId += id.Substring(posToMutate + offset, id.Length - (posToMutate + offset));
                     }
                     catch (Exception e)
@@ -485,12 +492,12 @@ namespace DDGFinder
                         bool directionToRemoveChar = true;
                         if (charToMutate == '(')
                         {
-                            newId += numbers_array[r.Next(numbers_array_length)];
+                            newId += numbers_array[Next(numbers_array_length)];
                             if (posToMutate < id.Length - 1 && id[posToMutate + 1] != '-')
-                                newId += operators_array[r.Next(operators_array_length)];
+                                newId += operators_array[Next(operators_array_length)];
                             directionToRemoveChar = false;
                         } else
-                            newId += operators_array[r.Next(operators_array_length)].ToString() + numbers_array[r.Next(numbers_array_length)].ToString();
+                            newId += operators_array[Next(operators_array_length)].ToString() + numbers_array[Next(numbers_array_length)].ToString();
                         newId += id.Substring(posToMutate + 1, id.Length - (posToMutate + 1));
                         newId = removeRandomParenthesisChar(newId, posToMutate, directionToRemoveChar);
                     }
@@ -538,7 +545,7 @@ namespace DDGFinder
             int count = positions.Count;
             if (count > 0)
             {
-                int pos = positions[r.Next(count)];
+                int pos = positions[Next(count)];
                 newId = newId.Insert(pos, ")");
             }
             else if (startingPos + (trueNumberFalseOperation ? 4 : 5) == newId.Length)
@@ -577,7 +584,7 @@ namespace DDGFinder
             }
             int count = positions.Count;
             if (count > 0)
-                newId = newId.Insert(positions[r.Next(count)], "(");
+                newId = newId.Insert(positions[Next(count)], "(");
             else
             {
                 int a = 0;
@@ -671,7 +678,7 @@ namespace DDGFinder
             }
             int count = positions.Count;
             if (count > 0)
-                value = value.Remove(positions[r.Next(count)], 1);
+                value = value.Remove(positions[Next(count)], 1);
             else
             {
                 int a = 0;
@@ -679,12 +686,12 @@ namespace DDGFinder
             return value;
         }
 
-        private string mutateId(string id)
+        private string mutateId(string id, int j)
         {
-            int numberOfTimesToMutate = r.Next(4) + (amountOfEqualFirstsSecondPuntuations / 6);
+            int numberOfTimesToMutate = Next(4) + (amountOfEqualFirstsSecondPuntuations / 6);
             string mutatedId = id;
             for (int i = 0; i < numberOfTimesToMutate; i++)
-                mutatedId = mutateIdInner(mutatedId);
+                mutatedId = mutateIdInner(mutatedId, j);
             return mutatedId;
         }
 
@@ -712,27 +719,32 @@ namespace DDGFinder
             amountOfEqualFirstsSecondPuntuations = 0;
             int actualSecondPuntuation = topologies[0].SecondPuntuation;
             bool notDone = true;
+            ObservableCollection<string> newIdsValues = new ObservableCollection<string>(idsValuesAux);
+            idsValues = newIdsValues;
+            OnPropertyChanged("Ids");
+            ObservableCollection<string> newResults = new ObservableCollection<string>();
             for (int i = 0; i < 100; i++)
             {
-                idsValues[i] = topologies[i].Id;
-                stateOrResultsValues[i] = topologies[i].DegreeDiameterAndSecondPuntuation;
+                newResults.Add(topologies[i].DegreeDiameterAndSecondPuntuation);
                 if (notDone && topologies[i].SecondPuntuation == actualSecondPuntuation)
                     amountOfEqualFirstsSecondPuntuations++;
                 else
                     notDone = false;
             }
+            stateOrResultsValues = newResults;
+            OnPropertyChanged("StateOrResults");
         }
 
         private static char randomChar()
         {
-            if (r.Next(maxLengthValue) == 0)
-                return r.Next(2) == 0 ? '(' : ')';
-            return characters[r.Next(0, characters.Length - 1)];
+            if (Next(maxLengthValue) == 0)
+                return Next(2) == 0 ? '(' : ')';
+            return characters[Next(characters.Length - 1)];
         }
 
         private string getValidRandomId()
         {
-            int length = r.Next(minLengthValue, maxLengthValue);
+            int length = Next(maxLengthValue - minLengthValue) + minLengthValue;
             char aux = randomChar();
             while (!numbers_array.Contains(aux))
                 aux = randomChar();
