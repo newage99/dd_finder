@@ -4,4 +4,4 @@
 
 **Interaction Method**: Visual Interface
 
-**Avaliable in platforms**: Windows
+**Platforms**: Windows
